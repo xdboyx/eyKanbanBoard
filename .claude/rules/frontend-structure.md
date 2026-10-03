@@ -60,7 +60,7 @@ src/
 │   ├── ThemeToggle.tsx
 │   ├── board/        StatusColumn.tsx、TaskCard.tsx
 │   └── layout/       AppHeader.tsx
-├── hooks/            useBoardView.ts、useTheme.ts
+├── hooks/            useBoardView.ts、useTaskDrag.ts、useTheme.ts
 ├── pages/
 │   └── board/        BoardPage.tsx
 ├── services/         boardRepository.ts、localStorageBoardRepository.ts、sampleBoard.ts、themePreference.ts

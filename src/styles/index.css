@@ -85,6 +85,9 @@
   --color-muted: var(--theme-muted);
   --color-rule: var(--theme-rule);
   --color-feature: var(--theme-feature);
+  /* 拖放時放開位置的指示線與滑過狀態的底色 */
+  --color-marker: var(--theme-marker);
+  --color-drop: var(--theme-drop);
 }
 
 :root {
@@ -96,6 +99,8 @@
   --theme-muted: var(--color-gray-300);
   --theme-rule: var(--color-divider-on-dark);
   --theme-feature: var(--color-accent-yellow);
+  --theme-marker: var(--color-white);
+  --theme-drop: rgb(255 255 255 / 0.04);
 }
 
 :root[data-theme='light'] {
@@ -107,6 +112,8 @@
   --theme-muted: var(--color-ink-800);
   --theme-rule: var(--color-gray-300);
   --theme-feature: var(--color-ink-800);
+  --theme-marker: var(--color-ink-800);
+  --theme-drop: rgb(46 46 56 / 0.04);
 }
 
 /* 只有一般模式才套用的樣式，例如 light:text-lead。主題寫在 <html data-theme> 上，見 main.tsx */

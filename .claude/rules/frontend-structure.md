@@ -56,21 +56,22 @@ src/
 ├── main.tsx
 ├── router.tsx
 ├── components/
-│   ├── icons.tsx
-│   ├── ThemeToggle.tsx
+│   ├── Button.tsx、ConfirmDialog.tsx、Drawer.tsx、icons.tsx、ThemeToggle.tsx
 │   ├── board/        StatusColumn.tsx、TaskCard.tsx
-│   └── layout/       AppHeader.tsx
-├── hooks/            useBoardView.ts、useTaskDrag.ts、useTheme.ts
+│   ├── layout/       AppHeader.tsx、NoticeBar.tsx
+│   └── task/         TaskDrawer.tsx
+├── hooks/            useBoardView.ts、useLeaveGuard.ts、useModalDialog.ts、useNotice.ts、useTask.ts、useTaskDrag.ts、useTheme.ts
 ├── pages/
-│   └── board/        BoardPage.tsx
+│   ├── board/        BoardPage.tsx
+│   └── tasks/        EditTaskPage.tsx、NewTaskPage.tsx
 ├── services/         boardRepository.ts、localStorageBoardRepository.ts、sampleBoard.ts、themePreference.ts
-├── stores/           boardStore.ts、themeStore.ts
+├── stores/           boardStore.ts、noticeStore.ts、themeStore.ts
 ├── styles/           index.css
 ├── types/            board.ts、theme.ts
-└── utils/            boardView.ts、date.ts
+└── utils/            board.ts、boardView.ts、date.ts、taskDraft.ts
 
 tests/                鏡像 src/ 的路徑
 ├── services/         localStorageBoardRepository.test.ts、themePreference.test.ts
-├── stores/           boardStore.test.ts、themeStore.test.ts
+├── stores/           boardStore.test.ts、noticeStore.test.ts、themeStore.test.ts
 └── utils/            boardView.test.ts
 ```

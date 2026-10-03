@@ -11,7 +11,15 @@ export const STATUS_NAMES: Record<Status, string> = {
 /** 用左右按鈕移動任務的方向：前一個或後一個狀態 */
 export type MoveDirection = 'prev' | 'next'
 
-export type Priority = 'none' | 'low' | 'medium' | 'high'
+export const PRIORITIES = ['none', 'low', 'medium', 'high'] as const
+export type Priority = (typeof PRIORITIES)[number]
+
+export const PRIORITY_NAMES: Record<Priority, string> = {
+  none: '無',
+  low: '低',
+  medium: '中',
+  high: '高',
+}
 
 export interface Task {
   id: string
@@ -40,6 +48,24 @@ export function createTask(id: string, fields: Partial<Omit<Task, 'id'>> = {}): 
     ...fields,
   }
 }
+
+/** 新增或編輯任務時可以填寫的欄位，以及任務要放在哪個狀態 */
+export interface TaskDraft extends Pick<Task, 'title' | 'summary' | 'priority' | 'tag' | 'owner' | 'dueDate'> {
+  status: Status
+}
+
+/** 有長度限制的文字欄位與上限字數 */
+export const TASK_TEXT_LIMITS = {
+  title: 100,
+  summary: 500,
+  tag: 20,
+  owner: 20,
+} as const
+
+export type TaskTextField = keyof typeof TASK_TEXT_LIMITS
+
+/** 欄位檢查的結果：不合法的欄位對應到提示文字，全部合法時是空物件 */
+export type TaskDraftErrors = Partial<Record<TaskTextField, string>>
 
 export interface Board {
   title: string

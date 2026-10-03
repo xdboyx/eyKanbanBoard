@@ -11,7 +11,7 @@ export function AppHeader() {
       <div className="ml-auto flex items-center gap-6">
         <button
           type="button"
-          className="focus-ring inline-flex cursor-pointer items-center gap-2 rounded-sm border border-ink-800 bg-white px-4 py-[9px] text-small text-ink-800"
+          className="focus-ring state-layer inline-flex cursor-pointer items-center gap-2 rounded-sm border border-ink-800 bg-white px-4 py-[9px] text-small text-ink-800"
         >
           <SearchIcon />
           搜尋任務

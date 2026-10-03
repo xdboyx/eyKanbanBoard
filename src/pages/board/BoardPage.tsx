@@ -1,5 +1,8 @@
+import { Link } from '@tanstack/react-router'
 import { flushSync } from 'react-dom'
+import { buttonClassName } from '../../components/Button'
 import { StatusColumn } from '../../components/board/StatusColumn'
+import { AddIcon } from '../../components/icons'
 import { ThemeToggle } from '../../components/ThemeToggle'
 import { useBoardView } from '../../hooks/useBoardView'
 import { useTaskDrag } from '../../hooks/useTaskDrag'
@@ -40,6 +43,10 @@ export function BoardPage({ store, themeStore }: { store: BoardStore; themeStore
         </div>
         <div className="flex flex-wrap items-center gap-4">
           <ThemeToggle theme={theme} onToggle={toggle} />
+          <Link to="/tasks/new" className={buttonClassName('primary')}>
+            <AddIcon />
+            新增任務
+          </Link>
         </div>
       </section>
       <div className="grow overflow-x-auto px-17 pt-8 pb-10 max-md:px-6">

@@ -10,7 +10,7 @@ export function ThemeToggle({ theme, onToggle }: { theme: Theme; onToggle: () =>
       aria-label={label}
       title={label}
       onClick={onToggle}
-      className="focus-ring box-border inline-flex size-11 cursor-pointer items-center justify-center border border-text bg-transparent p-0 text-text"
+      className="focus-ring state-layer box-border inline-flex size-11 cursor-pointer items-center justify-center border border-text bg-transparent p-0 text-text"
     >
       {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
     </button>

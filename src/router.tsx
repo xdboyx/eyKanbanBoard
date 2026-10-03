@@ -4,9 +4,9 @@ import {
   createRoute,
   createRouter,
 } from '@tanstack/react-router'
-import type { BoardStore } from './board/boardStore'
-import { BoardPage } from './board/ui/BoardPage'
-import { AppHeader } from './ui/AppHeader'
+import { AppHeader } from './components/layout/AppHeader'
+import { BoardPage } from './pages/board/BoardPage'
+import type { BoardStore } from './stores/boardStore'
 
 interface RouterContext {
   store: BoardStore
@@ -26,7 +26,7 @@ const boardRoute = createRoute({
   path: '/',
   // 只在第一次進入時載入；之後畫面以 store 的狀態為準
   loader: async ({ context }) => {
-    if (!context.store.getSnapshot()) await context.store.load()
+    if (!context.store.getState().board) await context.store.getState().load()
   },
   component: function BoardRoute() {
     const { store } = boardRoute.useRouteContext()

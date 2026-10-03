@@ -1,10 +1,10 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { RouterProvider } from '@tanstack/react-router'
-import { createBoardStore } from './board/boardStore'
-import { createLocalStorageRepository, resetSampleBoard } from './board/localStorageRepository'
 import { createAppRouter } from './router'
-import './index.css'
+import { createLocalStorageRepository, resetSampleBoard } from './services/localStorageBoardRepository'
+import { createBoardStore } from './stores/boardStore'
+import './styles/index.css'
 
 const store = createBoardStore(createLocalStorageRepository())
 const router = createAppRouter(store)

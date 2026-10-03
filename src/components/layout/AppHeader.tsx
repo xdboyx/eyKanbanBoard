@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { SearchIcon } from './icons'
+import { SearchIcon } from '../icons'
 
 /** 設計系統的全域頁首（ps-header）。時程、報表、成員不在第一版範圍，因此不顯示主選單。 */
 export function AppHeader() {

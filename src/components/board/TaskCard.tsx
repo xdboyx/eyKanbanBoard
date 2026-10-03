@@ -1,9 +1,5 @@
-import type { TaskView } from '../boardStore'
-
-/** YYYY-MM-DD → MM-DD */
-function monthDay(date: string) {
-  return date.slice(5)
-}
+import type { TaskView } from '../../types/board'
+import { monthDay } from '../../utils/date'
 
 export function TaskCard({ task }: { task: TaskView }) {
   const { done } = task

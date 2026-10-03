@@ -1,3 +1,7 @@
+## Frontend structure
+
+`src/` is split by responsibility: `components/`, `hooks/`, `utils/`, `styles/`, `stores/` (zustand), `pages/` (one folder per first URL segment), `types/`, `services/`. At most two levels of subfolders under each. Read `docs/frontend-structure.md` before adding or moving files, and update it (including its example tree) whenever the structure changes.
+
 ## Agent skills
 
 ### Issue tracker

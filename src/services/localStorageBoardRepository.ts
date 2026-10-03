@@ -1,6 +1,6 @@
-import type { BoardRepository } from './repository'
+import type { BoardRepository } from './boardRepository'
 import { createSampleBoard } from './sampleBoard'
-import type { Board } from './types'
+import type { Board } from '../types/board'
 
 const STORAGE_KEY = 'eykanban.board'
 

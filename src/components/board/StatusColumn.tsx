@@ -1,4 +1,4 @@
-import type { StatusView } from '../boardStore'
+import type { StatusView } from '../../types/board'
 import { TaskCard } from './TaskCard'
 
 export function StatusColumn({ status }: { status: StatusView }) {

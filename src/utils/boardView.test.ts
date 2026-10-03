@@ -54,4 +54,20 @@ describe('畫面用的看板', () => {
 
     expect(featured).toEqual(['high'])
   })
+
+  it('每個任務帶有前一個與後一個狀態，頭尾為 null', () => {
+    const view = toBoardView(
+      board({
+        tasks: { a: task('a'), b: task('b'), c: task('c'), d: task('d') },
+        order: { todo: ['a'], doing: ['b'], review: ['c'], done: ['d'] },
+      }),
+    )
+
+    expect(view.statuses.flatMap((s) => s.tasks).map((t) => [t.id, t.prevStatus, t.nextStatus])).toEqual([
+      ['a', null, 'doing'],
+      ['b', 'todo', 'review'],
+      ['c', 'doing', 'done'],
+      ['d', 'review', null],
+    ])
+  })
 })

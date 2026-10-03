@@ -1,8 +1,21 @@
+import type { HTMLAttributes } from 'react'
 import { STATUS_NAMES, type MoveDirection, type Status, type TaskView } from '../../types/board'
 import { monthDay } from '../../utils/date'
 import { ChevronLeftIcon, ChevronRightIcon } from '../icons'
 
-export function TaskCard({ task, onMove }: { task: TaskView; onMove: (direction: MoveDirection) => void }) {
+export function TaskCard({
+  task,
+  dragging,
+  dragProps,
+  onMove,
+}: {
+  task: TaskView
+  /** 正在被拖曳，卡片變淡 */
+  dragging: boolean
+  /** 拖放用的事件處理，見 useTaskDrag */
+  dragProps: HTMLAttributes<HTMLElement>
+  onMove: (direction: MoveDirection) => void
+}) {
   const { done } = task
   const date = done
     ? task.completedDate && `${monthDay(task.completedDate)} 完成`
@@ -10,12 +23,16 @@ export function TaskCard({ task, onMove }: { task: TaskView; onMove: (direction:
 
   return (
     <article
+      {...dragProps}
       data-task-id={task.id}
       className={[
-        'flex flex-col gap-3',
+        'flex cursor-grab flex-col gap-3 active:cursor-grabbing',
+        dragging && 'opacity-40',
         done ? 'border border-rule bg-transparent' : 'bg-card',
         task.featured ? 'border-t-4 border-t-accent-yellow px-4 pt-6 pb-4' : 'p-4',
-      ].join(' ')}
+      ]
+        .filter(Boolean)
+        .join(' ')}
     >
       {task.tag && !done && (
         <div>

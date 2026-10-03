@@ -2,6 +2,7 @@ import { flushSync } from 'react-dom'
 import { StatusColumn } from '../../components/board/StatusColumn'
 import { ThemeToggle } from '../../components/ThemeToggle'
 import { useBoardView } from '../../hooks/useBoardView'
+import { useTaskDrag } from '../../hooks/useTaskDrag'
 import { useTheme } from '../../hooks/useTheme'
 import type { BoardStore } from '../../stores/boardStore'
 import type { ThemeStore } from '../../stores/themeStore'
@@ -11,6 +12,9 @@ import { localDate } from '../../utils/date'
 export function BoardPage({ store, themeStore }: { store: BoardStore; themeStore: ThemeStore }) {
   const view = useBoardView(store)
   const { theme, toggle } = useTheme(themeStore)
+  const drag = useTaskDrag(view?.statuses ?? [], (taskId, { status, beforeId }) =>
+    store.getState().moveTaskTo(taskId, status, beforeId),
+  )
   if (!view) return null
 
   function moveTask(taskId: string, direction: MoveDirection) {
@@ -41,7 +45,7 @@ export function BoardPage({ store, themeStore }: { store: BoardStore; themeStore
       <div className="grow overflow-x-auto px-17 pt-8 pb-10 max-md:px-6">
         <div className="grid min-w-[1184px] grid-cols-[repeat(4,minmax(280px,1fr))] items-stretch gap-4">
           {view.statuses.map((status) => (
-            <StatusColumn key={status.status} status={status} onMoveTask={moveTask} />
+            <StatusColumn key={status.status} status={status} drag={drag} onMoveTask={moveTask} />
           ))}
         </div>
       </div>

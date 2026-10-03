@@ -164,6 +164,113 @@ describe('看板 store', () => {
       logError.mockRestore()
     })
   })
+
+  describe('拖放到指定位置', () => {
+    const crowded: Board = {
+      ...saved,
+      tasks: {
+        a: createTask('a', { title: '任務 a' }),
+        b: createTask('b', { title: '任務 b' }),
+        c: createTask('c', { title: '任務 c' }),
+        d: createTask('d', { title: '任務 d' }),
+        e: createTask('e', { title: '任務 e', completedDate: '2026-09-28' }),
+        f: createTask('f', { title: '任務 f', completedDate: '2026-09-30' }),
+      },
+      order: { todo: ['a', 'b', 'c'], doing: ['d'], review: [], done: ['e', 'f'] },
+    }
+
+    it('放到其他狀態的指定任務之前', async () => {
+      const store = await loadedStore(inMemoryRepository(crowded).repository)
+
+      store.getState().moveTaskTo('b', 'doing', 'd')
+
+      expect(store.getState().board!.order).toEqual({ todo: ['a', 'c'], doing: ['b', 'd'], review: [], done: ['e', 'f'] })
+    })
+
+    it('放到其他狀態的最後面', async () => {
+      const store = await loadedStore(inMemoryRepository(crowded).repository)
+
+      store.getState().moveTaskTo('a', 'doing', null)
+
+      expect(store.getState().board!.order).toEqual({ todo: ['b', 'c'], doing: ['d', 'a'], review: [], done: ['e', 'f'] })
+    })
+
+    it('放到沒有任務的狀態', async () => {
+      const store = await loadedStore(inMemoryRepository(crowded).repository)
+
+      store.getState().moveTaskTo('d', 'review', null)
+
+      expect(store.getState().board!.order).toEqual({ todo: ['a', 'b', 'c'], doing: [], review: ['d'], done: ['e', 'f'] })
+    })
+
+    it('在同一狀態內往前與往後調整順序', async () => {
+      const store = await loadedStore(inMemoryRepository(crowded).repository)
+
+      store.getState().moveTaskTo('c', 'todo', 'a')
+      expect(store.getState().board!.order.todo).toEqual(['c', 'a', 'b'])
+
+      store.getState().moveTaskTo('c', 'todo', null)
+      expect(store.getState().board!.order.todo).toEqual(['a', 'b', 'c'])
+
+      store.getState().moveTaskTo('a', 'todo', 'c')
+      expect(store.getState().board!.order.todo).toEqual(['b', 'a', 'c'])
+    })
+
+    it('放回原位時不產生變化，也不會儲存', async () => {
+      const { repository, saves } = inMemoryRepository(crowded)
+      const store = await loadedStore(repository)
+
+      store.getState().moveTaskTo('b', 'todo', 'b')
+      store.getState().moveTaskTo('b', 'todo', 'c')
+      store.getState().moveTaskTo('c', 'todo', null)
+      await store.getState().waitForSaves()
+
+      expect(store.getState().board).toEqual(crowded)
+      expect(saves).toEqual([])
+    })
+
+    it('指定的任務不在目標狀態時不移動', async () => {
+      const store = await loadedStore(inMemoryRepository(crowded).repository)
+
+      store.getState().moveTaskTo('a', 'doing', 'b')
+      store.getState().moveTaskTo('missing', 'doing', null)
+
+      expect(store.getState().board).toEqual(crowded)
+    })
+
+    it('在「已完成」內調整順序不改變完成日', async () => {
+      const store = await loadedStore(inMemoryRepository(crowded).repository)
+
+      store.getState().moveTaskTo('f', 'done', 'e')
+
+      const board = store.getState().board!
+      expect(board.order.done).toEqual(['f', 'e'])
+      expect(board.tasks.e!.completedDate).toBe('2026-09-28')
+      expect(board.tasks.f!.completedDate).toBe('2026-09-30')
+    })
+
+    it('拖入「已完成」時記錄完成日為今天，拖出時清除', async () => {
+      const store = await loadedStore(inMemoryRepository(crowded).repository)
+
+      store.getState().moveTaskTo('a', 'done', 'e')
+      store.getState().moveTaskTo('f', 'todo', null)
+
+      const board = store.getState().board!
+      expect(board.tasks.a!.completedDate).toBe('2026-10-05')
+      expect(board.tasks.f!.completedDate).toBeNull()
+    })
+
+    it('記錄最後更新時間並儲存整個看板', async () => {
+      const { repository, saves } = inMemoryRepository(crowded)
+      const store = await loadedStore(repository)
+
+      store.getState().moveTaskTo('a', 'review', null)
+      await store.getState().waitForSaves()
+
+      expect(store.getState().board!.updatedAt).toBe(NOW.toISOString())
+      expect(saves).toEqual([store.getState().board])
+    })
+  })
 })
 
 async function waitUntil(condition: () => boolean) {

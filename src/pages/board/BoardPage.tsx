@@ -1,10 +1,14 @@
 import { StatusColumn } from '../../components/board/StatusColumn'
+import { ThemeToggle } from '../../components/ThemeToggle'
 import { useBoardView } from '../../hooks/useBoardView'
+import { useTheme } from '../../hooks/useTheme'
 import type { BoardStore } from '../../stores/boardStore'
+import type { ThemeStore } from '../../stores/themeStore'
 import { localDate } from '../../utils/date'
 
-export function BoardPage({ store }: { store: BoardStore }) {
+export function BoardPage({ store, themeStore }: { store: BoardStore; themeStore: ThemeStore }) {
   const view = useBoardView(store)
+  const { theme, toggle } = useTheme(themeStore)
   if (!view) return null
 
   return (
@@ -17,6 +21,9 @@ export function BoardPage({ store }: { store: BoardStore }) {
             <li>{view.totalTasks} 項任務</li>
             {view.subtitle && <li>{view.subtitle}</li>}
           </ul>
+        </div>
+        <div className="flex flex-wrap items-center gap-4">
+          <ThemeToggle theme={theme} onToggle={toggle} />
         </div>
       </section>
       <div className="grow overflow-x-auto px-17 pt-8 pb-10 max-md:px-6">

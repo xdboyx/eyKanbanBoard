@@ -17,7 +17,8 @@ export function TaskCard({ task }: { task: TaskView }) {
     >
       {task.tag && !done && (
         <div>
-          <span className="inline-flex items-center rounded-sm border border-gray-600 px-[9px] py-[3px] text-small text-white">
+          {/* 深色時是 chip；一般模式在設計稿中只是一行粗體小字 */}
+          <span className="inline-flex items-center rounded-sm border border-gray-600 px-[9px] py-[3px] text-small text-white light:border-0 light:p-0 light:text-text">
             {task.tag}
           </span>
         </div>
@@ -28,7 +29,7 @@ export function TaskCard({ task }: { task: TaskView }) {
           {task.summary && <p className="m-0 text-body">{task.summary}</p>}
         </>
       ) : (
-        <h3 className={`m-0 text-body ${done ? 'text-muted' : 'text-text'}`}>{task.title}</h3>
+        <h3 className={`m-0 text-body ${done ? 'text-muted' : 'text-text light:text-lead'}`}>{task.title}</h3>
       )}
       <ul className="meta-list text-caption text-muted">
         {date && <li>{date}</li>}

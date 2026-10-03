@@ -57,14 +57,15 @@ src/
 ├── router.tsx
 ├── components/
 │   ├── icons.tsx
+│   ├── ThemeToggle.tsx
 │   ├── board/        StatusColumn.tsx、TaskCard.tsx
 │   └── layout/       AppHeader.tsx
-├── hooks/            useBoardView.ts
+├── hooks/            useBoardView.ts、useTheme.ts
 ├── pages/
 │   └── board/        BoardPage.tsx
-├── services/         boardRepository.ts、localStorageBoardRepository.ts、sampleBoard.ts
-├── stores/           boardStore.ts
+├── services/         boardRepository.ts、localStorageBoardRepository.ts、sampleBoard.ts、themePreference.ts
+├── stores/           boardStore.ts、themeStore.ts
 ├── styles/           index.css
-├── types/            board.ts
+├── types/            board.ts、theme.ts
 └── utils/            boardView.ts、date.ts
 ```

@@ -76,7 +76,7 @@
   --breakpoint-lg: 1200px;
 }
 
-/* 依主題變化的語意色，值取自設計稿的深色主題 */
+/* 依主題變化的語意色，值取自設計稿「A＋B｜可拖放看板」的深色與一般模式 */
 @theme inline {
   --color-page: var(--theme-page);
   --color-band: var(--theme-band);
@@ -88,6 +88,7 @@
 }
 
 :root {
+  color-scheme: dark;
   --theme-page: var(--color-ink-800);
   --theme-band: var(--color-ink-900);
   --theme-card: var(--color-ink-900);
@@ -96,6 +97,20 @@
   --theme-rule: var(--color-divider-on-dark);
   --theme-feature: var(--color-accent-yellow);
 }
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --theme-page: var(--color-gray-100);
+  --theme-band: var(--color-white);
+  --theme-card: var(--color-white);
+  --theme-text: var(--color-ink-800);
+  --theme-muted: var(--color-ink-800);
+  --theme-rule: var(--color-gray-300);
+  --theme-feature: var(--color-ink-800);
+}
+
+/* 只有一般模式才套用的樣式，例如 light:text-lead。主題寫在 <html data-theme> 上，見 main.tsx */
+@custom-variant light (&:where([data-theme='light'], [data-theme='light'] *));
 
 /* 設計系統元件的焦點樣式（bundle.css）：白色外框加 ink.800 內框，在任何底色上都看得到 */
 @utility focus-ring {

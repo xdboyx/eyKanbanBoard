@@ -7,9 +7,11 @@ import {
 import { AppHeader } from './components/layout/AppHeader'
 import { BoardPage } from './pages/board/BoardPage'
 import type { BoardStore } from './stores/boardStore'
+import type { ThemeStore } from './stores/themeStore'
 
 interface RouterContext {
   store: BoardStore
+  themeStore: ThemeStore
 }
 
 const rootRoute = createRootRouteWithContext<RouterContext>()({
@@ -29,15 +31,15 @@ const boardRoute = createRoute({
     if (!context.store.getState().board) await context.store.getState().load()
   },
   component: function BoardRoute() {
-    const { store } = boardRoute.useRouteContext()
-    return <BoardPage store={store} />
+    const { store, themeStore } = boardRoute.useRouteContext()
+    return <BoardPage store={store} themeStore={themeStore} />
   },
 })
 
 const routeTree = rootRoute.addChildren([boardRoute])
 
-export function createAppRouter(store: BoardStore) {
-  return createRouter({ routeTree, context: { store } })
+export function createAppRouter(store: BoardStore, themeStore: ThemeStore) {
+  return createRouter({ routeTree, context: { store, themeStore } })
 }
 
 declare module '@tanstack/react-router' {

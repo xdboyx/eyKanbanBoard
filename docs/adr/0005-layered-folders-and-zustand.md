@@ -1,6 +1,6 @@
 # 前端依職責分資料夾，共用狀態使用 zustand
 
-`src/` 改成依職責分資料夾（`components/`、`hooks/`、`utils/`、`styles/`、`stores/`、`pages/`、`types/`、`services/`），每個資料夾底下最多兩層子資料夾；需要跨元件共用的狀態一律用 zustand store。詳細規則在 `docs/frontend-structure.md`。
+`src/` 改成依職責分資料夾（`components/`、`hooks/`、`utils/`、`styles/`、`stores/`、`pages/`、`types/`、`services/`），每個資料夾底下最多兩層子資料夾；需要跨元件共用的狀態一律用 zustand store。詳細規則在 `.claude/rules/frontend-structure.md`。
 
 第一版骨架原本把看板相關的型別、store、資料存取與畫面都放在 `src/board/` 底下，store 是自己用 `useSyncExternalStore` 寫的。改成依職責分，是為了讓「某種東西該放哪」只有一個答案，不必每次判斷它屬於哪個功能；zustand 取代自製 store，之後加入拖放、編輯、搜尋等狀態時不用再自己處理訂閱與選取。
 

@@ -1,6 +1,6 @@
 ## Frontend structure
 
-`src/` is split by responsibility: `components/`, `hooks/`, `utils/`, `styles/`, `stores/` (zustand), `pages/` (one folder per first URL segment), `types/`, `services/`. At most two levels of subfolders under each. Read `docs/frontend-structure.md` before adding or moving files, and update it (including its example tree) whenever the structure changes.
+When writing or changing code under `src/`, follow `.claude/rules/frontend-structure.md`: it decides which folder every file goes in, the folder depth limit, the dependency direction and naming. If a file doesn't fit any folder there, ask instead of inventing a new one. Whenever the structure changes, update that file (including its example tree) in the same change.
 
 ## Agent skills
 

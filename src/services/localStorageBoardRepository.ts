@@ -12,6 +12,9 @@ export function createLocalStorageRepository(storage: Storage = window.localStor
       if (saved) return JSON.parse(saved) as Board
       return resetSampleBoard(storage)
     },
+    async save(board) {
+      storage.setItem(STORAGE_KEY, JSON.stringify(board))
+    },
   }
 }
 

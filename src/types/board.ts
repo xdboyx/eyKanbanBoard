@@ -8,6 +8,9 @@ export const STATUS_NAMES: Record<Status, string> = {
   done: '已完成',
 }
 
+/** 用左右按鈕移動任務的方向：前一個或後一個狀態 */
+export type MoveDirection = 'prev' | 'next'
+
 export type Priority = 'none' | 'low' | 'medium' | 'high'
 
 export interface Task {
@@ -50,6 +53,10 @@ export interface Board {
 
 /** 畫面用的任務：在 Task 上加上依狀態與優先級推導出的呈現旗標 */
 export interface TaskView extends Task {
+  /** 前一個狀態；在第一個狀態（待辦）時為 null */
+  prevStatus: Status | null
+  /** 後一個狀態；在最後一個狀態（已完成）時為 null */
+  nextStatus: Status | null
   /** 狀態為「已完成」 */
   done: boolean
   /** 高優先級且不在「已完成」：以醒目樣式呈現並顯示摘要 */

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import type { ThemePreference } from '../services/themePreference'
-import type { Theme } from '../types/theme'
-import { createThemeStore } from './themeStore'
+import type { ThemePreference } from '../../src/services/themePreference'
+import type { Theme } from '../../src/types/theme'
+import { createThemeStore } from '../../src/stores/themeStore'
 
 function inMemoryPreference(initial: Theme) {
   let saved = initial

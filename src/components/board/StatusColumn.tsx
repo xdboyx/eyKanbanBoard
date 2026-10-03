@@ -1,7 +1,13 @@
-import type { StatusView } from '../../types/board'
+import type { MoveDirection, StatusView } from '../../types/board'
 import { TaskCard } from './TaskCard'
 
-export function StatusColumn({ status }: { status: StatusView }) {
+export function StatusColumn({
+  status,
+  onMoveTask,
+}: {
+  status: StatusView
+  onMoveTask: (taskId: string, direction: MoveDirection) => void
+}) {
   return (
     <section aria-label={status.name} className="flex min-w-0 flex-col gap-3">
       <div className="flex items-baseline gap-3 border-b border-rule pb-3">
@@ -10,7 +16,7 @@ export function StatusColumn({ status }: { status: StatusView }) {
       </div>
       <div className="flex min-h-60 grow flex-col gap-3">
         {status.tasks.map((task) => (
-          <TaskCard key={task.id} task={task} />
+          <TaskCard key={task.id} task={task} onMove={(direction) => onMoveTask(task.id, direction)} />
         ))}
         {status.count === 0 && (
           <p className="m-0 border border-dashed border-rule px-4 py-6 text-center text-caption text-muted">

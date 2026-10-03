@@ -1,0 +1,134 @@
+@import 'tailwindcss';
+
+/* 設計系統 token，數值來自 DESIGN.md 與設計系統的元件樣式（bundle.css）。
+   清掉 Tailwind 預設的色盤、字級與字重，只留設計系統的值。 */
+@theme {
+  --color-*: initial;
+  --color-accent-yellow: #ffe600;
+  --color-ink-900: #1a1a24;
+  --color-ink-800: #2e2e38;
+  --color-gray-600: #747480;
+  --color-gray-300: #c4c4cd;
+  --color-gray-250: #cacad1;
+  --color-gray-100: #eaeaf2;
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-divider-on-dark: rgb(255 255 255 / 0.2);
+  --color-transparent: transparent;
+
+  --font-*: initial;
+  --font-sans: 'Brand Sans', 'Noto Sans', sans-serif;
+  --font-cjk: georgia, 青黑体, 'Hiragino Sans GB', 微软雅黑, 'Microsoft YaHei', 黑体, simhei, serif;
+
+  --font-weight-*: initial;
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-bold: 700;
+
+  --text-*: initial;
+  --text-display: 40px;
+  --text-display--line-height: 48px;
+  --text-display--font-weight: 300;
+  --text-h2: 32px;
+  --text-h2--line-height: 38.4px;
+  --text-h2--font-weight: 300;
+  --text-card-title: 24px;
+  --text-card-title--line-height: 28.8px;
+  --text-card-title--font-weight: 300;
+  --text-h3: 20px;
+  --text-h3--line-height: 32px;
+  --text-h3--font-weight: 400;
+  --text-lead: 18px;
+  --text-lead--line-height: 21.6px;
+  --text-lead--font-weight: 300;
+  --text-body: 16px;
+  --text-body--line-height: 24px;
+  --text-body--font-weight: 300;
+  --text-body-loose: 16px;
+  --text-body-loose--line-height: 28px;
+  --text-body-loose--font-weight: 300;
+  --text-label: 16px;
+  --text-label--line-height: 22px;
+  --text-label--font-weight: 700;
+  --text-small: 14px;
+  --text-small--line-height: 22px;
+  --text-small--font-weight: 700;
+  --text-caption: 14px;
+  --text-caption--line-height: 21px;
+  --text-caption--font-weight: 400;
+  /* 品牌字標（bundle.css 的 ps-wordmark） */
+  --text-wordmark: 20px;
+  --text-wordmark--line-height: 24px;
+  --text-wordmark--font-weight: 700;
+
+  /* 間距沿用 Tailwind 的 4px 基數：p-3=12px、p-17=68px */
+  --spacing: 4px;
+
+  --radius-*: initial;
+  --radius-sm: 3px;
+
+  --shadow-*: initial;
+  --shadow-elevation-1: 0px 8px 10px 0px rgb(46 46 56 / 0.3);
+
+  --breakpoint-*: initial;
+  --breakpoint-sm: 600px;
+  --breakpoint-md: 900px;
+  --breakpoint-lg: 1200px;
+}
+
+/* 依主題變化的語意色，值取自設計稿的深色主題 */
+@theme inline {
+  --color-page: var(--theme-page);
+  --color-band: var(--theme-band);
+  --color-card: var(--theme-card);
+  --color-text: var(--theme-text);
+  --color-muted: var(--theme-muted);
+  --color-rule: var(--theme-rule);
+  --color-feature: var(--theme-feature);
+}
+
+:root {
+  --theme-page: var(--color-ink-800);
+  --theme-band: var(--color-ink-900);
+  --theme-card: var(--color-ink-900);
+  --theme-text: var(--color-white);
+  --theme-muted: var(--color-gray-300);
+  --theme-rule: var(--color-divider-on-dark);
+  --theme-feature: var(--color-accent-yellow);
+}
+
+/* 設計系統元件的焦點樣式（bundle.css）：白色外框加 ink.800 內框，在任何底色上都看得到 */
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--color-white);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px var(--color-ink-800);
+  }
+}
+
+/* 用「｜」分隔的 meta 列（設計系統的 ps-press__meta） */
+@utility meta-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 calc(var(--spacing) * 3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  & > li + li::before {
+    content: '｜';
+    margin-right: calc(var(--spacing) * 3);
+  }
+}
+
+@layer base {
+  body {
+    margin: 0;
+    font-family: var(--font-cjk);
+  }
+  a {
+    color: inherit;
+  }
+  a:hover {
+    color: var(--color-gray-300);
+  }
+}

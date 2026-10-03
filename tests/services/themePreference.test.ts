@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createLocalStorageThemePreference } from './themePreference'
+import { createLocalStorageThemePreference } from '../../src/services/themePreference'
 
 function memoryStorage(): Storage {
   const items = new Map<string, string>()

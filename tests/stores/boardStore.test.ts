@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { BoardRepository } from '../services/boardRepository'
-import { createTask, type Board } from '../types/board'
-import { createBoardStore } from './boardStore'
+import type { BoardRepository } from '../../src/services/boardRepository'
+import { createTask, type Board } from '../../src/types/board'
+import { createBoardStore } from '../../src/stores/boardStore'
 
 const saved: Board = {
   title: '測試看板',

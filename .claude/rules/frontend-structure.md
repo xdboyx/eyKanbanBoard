@@ -15,7 +15,7 @@
 | `types/` | 跨資料夾共用的領域型別與常數，例如 `Task`、`Status`、`BoardView` | 只有單一檔案用到的型別（跟著那個檔案放） |
 | `services/` | 資料存取：`BoardRepository` 介面、localStorage 實作、之後的 Worker API 呼叫、本地範例資料 | 畫面狀態（放 `stores/`） |
 
-`src/` 根目錄只放進入點 `main.tsx` 與路由定義 `router.tsx`。
+`src/` 根目錄只放進入點 `main.tsx` 與路由定義 `router.tsx`。測試不放在 `src/`，見下方「命名」。
 
 ## 資料夾層級
 
@@ -47,7 +47,7 @@ pages → components / hooks → stores → services → types
 - 元件：`PascalCase.tsx`，一個檔案一個主要元件，檔名與元件同名。
 - hook：`useXxx.ts`。
 - store：`xxxStore.ts`，匯出 `createXxxStore`。
-- 測試：與受測檔案放在同一個資料夾，命名為 `xxx.test.ts`。
+- 測試：放在專案根目錄的 `tests/`，依受測檔案在 `src/` 底下的路徑鏡像擺放，命名為 `xxx.test.ts`，例如 `src/stores/boardStore.ts` 的測試是 `tests/stores/boardStore.test.ts`。
 
 ## 範例：目前的看板
 
@@ -68,4 +68,9 @@ src/
 ├── styles/           index.css
 ├── types/            board.ts、theme.ts
 └── utils/            boardView.ts、date.ts
+
+tests/                鏡像 src/ 的路徑
+├── services/         localStorageBoardRepository.test.ts、themePreference.test.ts
+├── stores/           boardStore.test.ts、themeStore.test.ts
+└── utils/            boardView.test.ts
 ```

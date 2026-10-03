@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { createLocalStorageRepository } from './localStorageBoardRepository'
-import { createSampleBoard } from './sampleBoard'
+import { createLocalStorageRepository } from '../../src/services/localStorageBoardRepository'
+import { createSampleBoard } from '../../src/services/sampleBoard'
 
 function memoryStorage(): Storage {
   const items = new Map<string, string>()

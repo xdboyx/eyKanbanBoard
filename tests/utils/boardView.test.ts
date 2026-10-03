@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { createTask, type Board, type Task } from '../types/board'
-import { toBoardView } from './boardView'
+import { createTask, type Board, type Task } from '../../src/types/board'
+import { toBoardView } from '../../src/utils/boardView'
 
 function task(id: string, fields: Partial<Omit<Task, 'id'>> = {}): Task {
   return createTask(id, { title: `任務 ${id}`, ...fields })

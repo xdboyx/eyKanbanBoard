@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import type { HTMLAttributes } from 'react'
 import { STATUS_NAMES, type MoveDirection, type Status, type TaskView } from '../../types/board'
 import { monthDay } from '../../utils/date'
@@ -26,7 +27,7 @@ export function TaskCard({
       {...dragProps}
       data-task-id={task.id}
       className={[
-        'flex cursor-grab flex-col gap-3 active:cursor-grabbing',
+        'card-state-layer relative flex cursor-grab flex-col gap-3 active:cursor-grabbing',
         dragging && 'opacity-40',
         done ? 'border border-rule bg-transparent' : 'bg-card',
         task.featured ? 'border-t-4 border-t-accent-yellow px-4 pt-6 pb-4' : 'p-4',
@@ -44,23 +45,44 @@ export function TaskCard({
       )}
       {task.featured ? (
         <>
-          <h3 className="m-0 text-card-title text-feature">{task.title}</h3>
+          <h3 className="m-0 text-card-title text-feature">
+            <TaskLink task={task} />
+          </h3>
           {task.summary && <p className="m-0 text-body">{task.summary}</p>}
         </>
       ) : (
-        <h3 className={`m-0 text-body ${done ? 'text-muted' : 'text-text light:text-lead'}`}>{task.title}</h3>
+        <h3 className={`m-0 text-body ${done ? 'text-muted' : 'text-text light:text-lead'}`}>
+          <TaskLink task={task} />
+        </h3>
       )}
       <div className="flex items-center justify-between gap-3">
         <ul className="meta-list text-caption text-muted">
           {date && <li>{date}</li>}
           {task.owner && <li>{task.owner}</li>}
         </ul>
-        <div className="flex flex-none gap-1">
+        <div className="relative z-1 flex flex-none gap-1">
           <MoveButton direction="prev" target={task.prevStatus} onMove={onMove} />
           <MoveButton direction="next" target={task.nextStatus} onMove={onMove} />
         </div>
       </div>
     </article>
+  )
+}
+
+/**
+ * 任務標題，點擊開啟編輯抽屜。連結的 ::after 蓋滿整張卡片，點卡片任何地方都會開啟；
+ * 連結本身不可拖曳，拖曳時拖的是整張卡片。
+ */
+function TaskLink({ task }: { task: TaskView }) {
+  return (
+    <Link
+      to="/tasks/$taskId"
+      params={{ taskId: task.id }}
+      draggable={false}
+      className="focus-ring text-inherit no-underline after:absolute after:inset-0 hover:text-inherit hover:underline"
+    >
+      {task.title}
+    </Link>
   )
 }
 
@@ -84,7 +106,7 @@ function MoveButton({
       title={label}
       disabled={!target}
       onClick={() => onMove(direction)}
-      className="focus-ring box-border inline-flex size-8 cursor-pointer items-center justify-center border border-rule bg-transparent p-0 text-text hover:border-text disabled:cursor-default disabled:opacity-30 disabled:hover:border-rule"
+      className="focus-ring state-layer box-border inline-flex size-8 cursor-pointer items-center justify-center border border-rule bg-transparent p-0 text-text enabled:hover:border-text disabled:cursor-default disabled:opacity-30"
     >
       {direction === 'prev' ? <ChevronLeftIcon /> : <ChevronRightIcon />}
     </button>

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { BoardRepository } from '../../src/services/boardRepository'
-import { createTask, type Board } from '../../src/types/board'
+import { createTask, type Board, type TaskDraft } from '../../src/types/board'
 import { createBoardStore } from '../../src/stores/boardStore'
 
 const saved: Board = {
@@ -32,7 +32,7 @@ function inMemoryRepository(initial: Board) {
 }
 
 async function loadedStore(repository: BoardRepository) {
-  const store = createBoardStore(repository, { now: () => NOW })
+  const store = createBoardStore(repository, { now: () => NOW, newId: () => 'new' })
   await store.getState().load()
   return store
 }
@@ -269,6 +269,247 @@ describe('看板 store', () => {
 
       expect(store.getState().board!.updatedAt).toBe(NOW.toISOString())
       expect(saves).toEqual([store.getState().board])
+    })
+  })
+})
+
+describe('新增、編輯、刪除任務', () => {
+  /** 任務 a 目前的表單值，再套上要修改的欄位 */
+  function draftOfA(fields: Partial<TaskDraft> = {}): TaskDraft {
+    return { title: '任務 a', summary: '', priority: 'none', tag: '', owner: '', dueDate: null, status: 'todo', ...fields }
+  }
+
+  describe('建立任務', () => {
+    it('未填的欄位使用預設值，放在「待辦」的最上面', async () => {
+      const store = await loadedStore(inMemoryRepository(saved).repository)
+
+      expect(store.getState().createTask({ title: '新任務' })).toBeNull()
+
+      const board = store.getState().board!
+      expect(board.tasks.new).toEqual(createTask('new', { title: '新任務' }))
+      expect(board.order.todo).toEqual(['new', 'a'])
+    })
+
+    it('放在所選狀態的最上面，並保存所有欄位', async () => {
+      const store = await loadedStore(inMemoryRepository(saved).repository)
+      const draft: TaskDraft = {
+        title: '新任務',
+        summary: '補充說明',
+        priority: 'high',
+        tag: '研究',
+        owner: '王小明',
+        dueDate: '2026-10-31',
+        status: 'review',
+      }
+
+      store.getState().createTask(draft)
+
+      const board = store.getState().board!
+      expect(board.order.review).toEqual(['new', 'c'])
+      const { status: _status, ...fields } = draft
+      expect(board.tasks.new).toEqual(createTask('new', fields))
+    })
+
+    it('建立在「已完成」時記錄完成日為今天', async () => {
+      const store = await loadedStore(inMemoryRepository(saved).repository)
+
+      store.getState().createTask({ title: '新任務', status: 'done' })
+
+      expect(store.getState().board!.order.done).toEqual(['new', 'd'])
+      expect(store.getState().board!.tasks.new!.completedDate).toBe('2026-10-05')
+    })
+
+    it('去除文字欄位的前後空白', async () => {
+      const store = await loadedStore(inMemoryRepository(saved).repository)
+
+      store.getState().createTask({ title: '  新任務  ', summary: ' 說明 ', tag: ' 研究 ', owner: ' 王小明 ' })
+
+      expect(store.getState().board!.tasks.new).toMatchObject({
+        title: '新任務',
+        summary: '說明',
+        tag: '研究',
+        owner: '王小明',
+      })
+    })
+
+    it('記錄最後更新時間並儲存整個看板', async () => {
+      const { repository, saves } = inMemoryRepository(saved)
+      const store = await loadedStore(repository)
+
+      store.getState().createTask({ title: '新任務' })
+      await store.getState().waitForSaves()
+
+      expect(store.getState().board!.updatedAt).toBe(NOW.toISOString())
+      expect(saves).toEqual([store.getState().board])
+    })
+  })
+
+  describe('欄位檢查', () => {
+    it('標題空白時不建立任務，也不會儲存', async () => {
+      const { repository, saves } = inMemoryRepository(saved)
+      const store = await loadedStore(repository)
+
+      expect(store.getState().createTask({ title: '' })).toEqual({ title: '請輸入標題' })
+      expect(store.getState().createTask({ title: '   ' })).toEqual({ title: '請輸入標題' })
+      await store.getState().waitForSaves()
+
+      expect(store.getState().board).toEqual(saved)
+      expect(saves).toEqual([])
+    })
+
+    it('各文字欄位超過上限字數時回傳所有錯誤', async () => {
+      const store = await loadedStore(inMemoryRepository(saved).repository)
+
+      const errors = store.getState().createTask({
+        title: '字'.repeat(101),
+        summary: '字'.repeat(501),
+        tag: '字'.repeat(21),
+        owner: '字'.repeat(21),
+      })
+
+      expect(errors).toEqual({
+        title: '標題最多 100 字',
+        summary: '摘要最多 500 字',
+        tag: '標籤最多 20 字',
+        owner: '負責人最多 20 字',
+      })
+      expect(store.getState().board).toEqual(saved)
+    })
+
+    it('剛好等於上限字數時可以儲存；字數以字元計算，前後空白不算', async () => {
+      const store = await loadedStore(inMemoryRepository(saved).repository)
+
+      const errors = store.getState().createTask({
+        title: ` ${'😀'.repeat(100)} `,
+        summary: '字'.repeat(500),
+        tag: '字'.repeat(20),
+        owner: '字'.repeat(20),
+      })
+
+      expect(errors).toBeNull()
+      expect(store.getState().board!.tasks.new!.title).toBe('😀'.repeat(100))
+    })
+
+    it('更新時欄位不合法則不修改任務', async () => {
+      const store = await loadedStore(inMemoryRepository(saved).repository)
+
+      expect(store.getState().updateTask('a', draftOfA({ title: ' ', status: 'doing' }))).toEqual({ title: '請輸入標題' })
+
+      expect(store.getState().board).toEqual(saved)
+    })
+  })
+
+  describe('更新任務', () => {
+    it('更新欄位，狀態不變時保持原本的位置', async () => {
+      const crowded: Board = {
+        ...saved,
+        tasks: { ...saved.tasks, e: createTask('e', { title: '任務 e' }) },
+        order: { ...saved.order, todo: ['a', 'e'] },
+      }
+      const store = await loadedStore(inMemoryRepository(crowded).repository)
+
+      const fields = { summary: '說明', priority: 'medium', tag: '開發', owner: '王小明', dueDate: '2026-11-01' } as const
+
+      expect(store.getState().updateTask('a', draftOfA({ title: ' 新標題 ', ...fields }))).toBeNull()
+
+      const board = store.getState().board!
+      expect(board.tasks.a).toEqual(createTask('a', { title: '新標題', ...fields }))
+      expect(board.order.todo).toEqual(['a', 'e'])
+    })
+
+    it('清除到期日', async () => {
+      const withDue: Board = {
+        ...saved,
+        tasks: { ...saved.tasks, a: createTask('a', { title: '任務 a', dueDate: '2026-10-10' }) },
+      }
+      const store = await loadedStore(inMemoryRepository(withDue).repository)
+
+      store.getState().updateTask('a', draftOfA({ dueDate: null }))
+
+      expect(store.getState().board!.tasks.a!.dueDate).toBeNull()
+    })
+
+    it('狀態改變時放在新狀態的最下面', async () => {
+      const store = await loadedStore(inMemoryRepository(saved).repository)
+
+      store.getState().updateTask('a', draftOfA({ status: 'doing' }))
+
+      expect(store.getState().board!.order).toEqual({ todo: [], doing: ['b', 'a'], review: ['c'], done: ['d'] })
+    })
+
+    it('狀態改為「已完成」時記錄完成日為今天', async () => {
+      const store = await loadedStore(inMemoryRepository(saved).repository)
+
+      store.getState().updateTask('a', draftOfA({ status: 'done' }))
+
+      expect(store.getState().board!.order.done).toEqual(['d', 'a'])
+      expect(store.getState().board!.tasks.a!.completedDate).toBe('2026-10-05')
+    })
+
+    it('狀態改離「已完成」時清除完成日', async () => {
+      const store = await loadedStore(inMemoryRepository(saved).repository)
+
+      store.getState().updateTask('d', { ...draftOfA({ title: '任務 d' }), status: 'review' })
+
+      expect(store.getState().board!.order.review).toEqual(['c', 'd'])
+      expect(store.getState().board!.tasks.d!.completedDate).toBeNull()
+    })
+
+    it('留在「已完成」時保留完成日', async () => {
+      const store = await loadedStore(inMemoryRepository(saved).repository)
+
+      store.getState().updateTask('d', { ...draftOfA({ title: '任務 d 改名' }), status: 'done' })
+
+      expect(store.getState().board!.tasks.d).toMatchObject({ title: '任務 d 改名', completedDate: '2026-09-30' })
+    })
+
+    it('沒有任何修改時不會儲存', async () => {
+      const { repository, saves } = inMemoryRepository(saved)
+      const store = await loadedStore(repository)
+
+      expect(store.getState().updateTask('a', draftOfA({ title: ' 任務 a ' }))).toBeNull()
+      await store.getState().waitForSaves()
+
+      expect(store.getState().board).toEqual(saved)
+      expect(saves).toEqual([])
+    })
+
+    it('記錄最後更新時間並儲存整個看板', async () => {
+      const { repository, saves } = inMemoryRepository(saved)
+      const store = await loadedStore(repository)
+
+      store.getState().updateTask('a', draftOfA({ title: '新標題' }))
+      await store.getState().waitForSaves()
+
+      expect(store.getState().board!.updatedAt).toBe(NOW.toISOString())
+      expect(saves).toEqual([store.getState().board])
+    })
+  })
+
+  describe('刪除任務', () => {
+    it('從看板與所在狀態中移除，並儲存整個看板', async () => {
+      const { repository, saves } = inMemoryRepository(saved)
+      const store = await loadedStore(repository)
+
+      store.getState().deleteTask('b')
+      await store.getState().waitForSaves()
+
+      const board = store.getState().board!
+      expect(board.tasks.b).toBeUndefined()
+      expect(Object.keys(board.tasks)).toEqual(['a', 'c', 'd'])
+      expect(board.order).toEqual({ todo: ['a'], doing: [], review: ['c'], done: ['d'] })
+      expect(saves).toEqual([board])
+    })
+
+    it('任務不存在時不動，也不會儲存', async () => {
+      const { repository, saves } = inMemoryRepository(saved)
+      const store = await loadedStore(repository)
+
+      store.getState().deleteTask('missing')
+      await store.getState().waitForSaves()
+
+      expect(store.getState().board).toEqual(saved)
+      expect(saves).toEqual([])
     })
   })
 })

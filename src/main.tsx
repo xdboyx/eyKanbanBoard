@@ -5,13 +5,15 @@ import { createAppRouter } from './router'
 import { createLocalStorageRepository, resetSampleBoard } from './services/localStorageBoardRepository'
 import { createLocalStorageThemePreference } from './services/themePreference'
 import { createBoardStore } from './stores/boardStore'
+import { createNoticeStore } from './stores/noticeStore'
 import { createThemeStore } from './stores/themeStore'
 import type { Theme } from './types/theme'
 import './styles/index.css'
 
 const store = createBoardStore(createLocalStorageRepository())
 const themeStore = createThemeStore(createLocalStorageThemePreference())
-const router = createAppRouter(store, themeStore)
+const noticeStore = createNoticeStore()
+const router = createAppRouter(store, themeStore, noticeStore)
 
 // 主題寫在 <html data-theme> 上，所有頁面（包含登入頁）都依此換色
 const applyTheme = (theme: Theme) => {

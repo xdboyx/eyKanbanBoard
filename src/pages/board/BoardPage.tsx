@@ -1,16 +1,10 @@
-import { useSyncExternalStore } from 'react'
-import type { BoardStore } from '../boardStore'
-import { StatusColumn } from './StatusColumn'
-
-/** ISO 8601 → YYYY-MM-DD（使用者本地日期） */
-function localDate(iso: string) {
-  const d = new Date(iso)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-}
+import { StatusColumn } from '../../components/board/StatusColumn'
+import { useBoardView } from '../../hooks/useBoardView'
+import type { BoardStore } from '../../stores/boardStore'
+import { localDate } from '../../utils/date'
 
 export function BoardPage({ store }: { store: BoardStore }) {
-  const view = useSyncExternalStore(store.subscribe, store.getSnapshot)
+  const view = useBoardView(store)
   if (!view) return null
 
   return (

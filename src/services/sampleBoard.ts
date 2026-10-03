@@ -1,4 +1,4 @@
-import { createTask, type Board, type Task } from './types'
+import { createTask, type Board, type Task } from '../types/board'
 
 function tasksById(tasks: Record<string, Partial<Omit<Task, 'id'>>>): Record<string, Task> {
   return Object.fromEntries(Object.entries(tasks).map(([id, fields]) => [id, createTask(id, fields)]))

@@ -9,7 +9,7 @@
 | `components/` | 共用的畫面元件（`.tsx`）。相關的元件放在同一個子資料夾，例如 `components/board/`、`components/layout/`；不屬於任何群組的通用元件直接放在 `components/` 底下 | 讀寫 store 以外的資料存取、純計算邏輯 |
 | `hooks/` | 共用的元件邏輯，以 `use` 開頭的自訂 hook，例如訂閱 store 並組出畫面資料 | 不需要 React 的純函式（放 `utils/`） |
 | `utils/` | 共用的計算、轉換、格式化等純函式，例如日期格式、看板資料 → 畫面資料 | React 元件與 hook、有副作用的程式碼 |
-| `styles/` | CSS、Tailwind 的 `@theme` 設計 token、主題色、`@utility` | 元件本身（元件的樣式直接寫 Tailwind class） |
+| `styles/` | `theme.css`：Tailwind 的 `@theme` 設計 token 與依主題變化的語意色變數；`index.css`：載入 Tailwind 與 `theme.css`，放 `@custom-variant`、`@utility` 與 base 樣式 | 元件本身（元件的樣式直接寫 Tailwind class）；`theme.css` 不放變數以外的樣式 |
 | `stores/` | zustand store。需要跨頁面（全域）或跨多個元件（某個區塊）共用的狀態都放這裡 | 只有單一元件用到的狀態（用 `useState`） |
 | `pages/` | 每條路由對應的頁面元件，依網址第一段分資料夾：`/` → `pages/board/`、`/tasks/*` → `pages/tasks/`、`/login` → `pages/login/` | 路由定義本身（集中在 `src/router.tsx`，見 ADR-0004）、可在別頁重用的元件（放 `components/`） |
 | `types/` | 跨資料夾共用的領域型別與常數，例如 `Task`、`Status`、`BoardView` | 只有單一檔案用到的型別（跟著那個檔案放） |
@@ -66,7 +66,7 @@ src/
 │   └── tasks/        EditTaskPage.tsx、NewTaskPage.tsx
 ├── services/         boardRepository.ts、localStorageBoardRepository.ts、sampleBoard.ts、themePreference.ts
 ├── stores/           boardStore.ts、noticeStore.ts、themeStore.ts
-├── styles/           index.css
+├── styles/           index.css、theme.css
 ├── types/            board.ts、theme.ts
 └── utils/            board.ts、boardView.ts、date.ts、taskDraft.ts
 

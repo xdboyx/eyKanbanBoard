@@ -1,6 +1,6 @@
 # 用 npm run dev:worker 在本地跑 Worker 時的帳密與 session 簽章金鑰。
 # 複製這個檔案為 .dev.vars 並填入自己的值；.dev.vars 不進版控。
-# 正式環境不用這個檔案，改在 Cloudflare 後台 Worker 的「設定 → 變數與 Secret」設定（ADR-0002）。
+# 正式環境不用這個檔案，改在 Cloudflare 後台 Worker 的「設定 → 執行時變數與機密」設定，步驟見 README（ADR-0002）。
 APP_USERNAME=admin
 APP_PASSWORD=change-me
 SESSION_SECRET=change-me-to-a-long-random-string

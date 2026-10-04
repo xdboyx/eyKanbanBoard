@@ -16,6 +16,13 @@ export default defineConfig({
         },
       },
       './vitest.worker.config.ts',
+      {
+        test: {
+          name: 'routing',
+          environment: 'node',
+          include: ['tests/worker/routing.test.ts'],
+        },
+      },
     ],
   },
 })

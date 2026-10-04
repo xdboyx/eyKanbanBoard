@@ -17,7 +17,7 @@
 
 `src/` 根目錄只放進入點 `main.tsx` 與路由定義 `router.tsx`。測試不放在 `src/`，見下方「命名」。
 
-Worker 不是前端，不放在 `src/`：程式碼在專案根目錄的 `worker/`，入口是 `worker/index.ts`，不 import `src/` 的任何檔案。它的測試放在 `tests/worker/`，以 `@cloudflare/vitest-pool-workers` 在 Workers runtime 中執行（設定在 `vitest.worker.config.ts`），驗證 API 的請求與回應。
+Worker 不是前端，不放在 `src/`：程式碼在專案根目錄的 `worker/`，入口是 `worker/index.ts`，不 import `src/` 的任何檔案。它的測試放在 `tests/worker/`，以 `@cloudflare/vitest-pool-workers` 在 Workers runtime 中執行（設定在 `vitest.worker.config.ts`），驗證 API 的請求與回應。例外是 `tests/worker/routing.test.ts`：它驗證請求進到 Worker 之前的分流（`/api/*` 交給 Worker、其他路徑回傳前端頁面），vitest-pool-workers 測不到這段，所以改在 Node 中以 wrangler 依 `wrangler.jsonc` 啟動本地 Worker（設定在 `vite.config.ts` 的 `routing` project），靜態檔案用 `tests/worker/fixtures/frontend/`。
 
 ## 資料夾層級
 
@@ -94,5 +94,5 @@ tests/                鏡像 src/ 與 worker/ 的路徑
 ├── services/         localStorageBoardRepository.test.ts、themePreference.test.ts、workerAuthService.test.ts、workerBoardRepository.test.ts
 ├── stores/           authStore.test.ts、boardStore.test.ts、noticeStore.test.ts、themeStore.test.ts
 ├── utils/            boardView.test.ts、redirect.test.ts
-└── worker/           index.test.ts
+└── worker/           index.test.ts、routing.test.ts、fixtures/frontend/（routing 測試用的前端檔案）
 ```

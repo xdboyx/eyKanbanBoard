@@ -77,15 +77,18 @@
  * 用「｜」分隔的 meta 列（設計系統的 ps-press__meta）。
  * 每一項的分隔線畫在它左邊的間隙裡；換行後每一行第一項的分隔線落在列表左邊界外，被 overflow 裁掉，
  * 所以換行時行首不會多出分隔線。不用 position，避免蓋住卡片連結的點擊範圍。
+ * 四周留 8px 的 padding 再用負 margin 抵銷：裡面的按鈕或輸入框（例如看板副標）的焦點外框不會被裁掉，
+ * 而這 8px 比分隔線與文字的間距小，行首的分隔線仍落在裁切範圍外。
  */
 @utility meta-list {
   --meta-list-space: calc(var(--spacing) * 3);
   display: flex;
   flex-wrap: wrap;
   gap: 0 calc(1em + var(--meta-list-space) * 2);
+  --meta-list-clip-room: calc(var(--spacing) * 2);
   overflow: hidden;
-  margin: 0;
-  padding: 0;
+  margin: calc(var(--meta-list-clip-room) * -1);
+  padding: var(--meta-list-clip-room);
   list-style: none;
   & > li::before {
     content: '｜';

@@ -47,6 +47,64 @@ describe('看板 store', () => {
     expect(store.getState().board).toEqual(saved)
   })
 
+  describe('修改看板標題與副標', () => {
+    it('修改標題與副標，去除前後空白', async () => {
+      const store = await loadedStore(inMemoryRepository(saved).repository)
+
+      store.getState().setTitle('  新標題  ')
+      store.getState().setSubtitle(' 新單位 ')
+
+      expect(store.getState().board).toMatchObject({ title: '新標題', subtitle: '新單位' })
+    })
+
+    it('標題空白時保留原本的標題，也不會儲存', async () => {
+      const { repository, saves } = inMemoryRepository(saved)
+      const store = await loadedStore(repository)
+
+      store.getState().setTitle('')
+      store.getState().setTitle('   ')
+      await store.getState().waitForSaves()
+
+      expect(store.getState().board).toEqual(saved)
+      expect(saves).toEqual([])
+    })
+
+    it('副標可以清空', async () => {
+      const store = await loadedStore(inMemoryRepository(saved).repository)
+
+      store.getState().setSubtitle('  ')
+
+      expect(store.getState().board!.subtitle).toBe('')
+    })
+
+    it('沒有改變時不會儲存', async () => {
+      const { repository, saves } = inMemoryRepository(saved)
+      const store = await loadedStore(repository)
+
+      store.getState().setTitle(' 測試看板 ')
+      store.getState().setSubtitle('測試單位 ')
+      await store.getState().waitForSaves()
+
+      expect(store.getState().board).toEqual(saved)
+      expect(saves).toEqual([])
+    })
+
+    it('記錄最後更新時間並儲存整個看板', async () => {
+      const { repository, saves } = inMemoryRepository(saved)
+      const store = await loadedStore(repository)
+
+      store.getState().setTitle('新標題')
+      await store.getState().waitForSaves()
+      expect(store.getState().board!.updatedAt).toBe(NOW.toISOString())
+      expect(saves).toEqual([store.getState().board])
+
+      store.getState().setSubtitle('新單位')
+      await store.getState().waitForSaves()
+      expect(saves).toHaveLength(2)
+      expect(saves[1]).toMatchObject({ title: '新標題', subtitle: '新單位', updatedAt: NOW.toISOString() })
+    })
+  })
+
   describe('用左右按鈕移動任務', () => {
     it('移到下一個狀態的最下面', async () => {
       const store = await loadedStore(inMemoryRepository(saved).repository)

@@ -17,6 +17,10 @@ export interface BoardState {
   /** 尚未載入時為 null */
   board: Board | null
   load(): Promise<void>
+  /** 修改看板標題，去除前後空白；空白或沒有改變時不動 */
+  setTitle(title: string): void
+  /** 修改看板副標，去除前後空白，可以留空；沒有改變時不動 */
+  setSubtitle(subtitle: string): void
   /**
    * 建立任務，放在所選狀態的最上面；未填的欄位使用預設值（狀態為「待辦」）。
    * 欄位不合法時不建立，回傳各欄位的錯誤；建立成功時回傳 null。
@@ -75,6 +79,18 @@ export function createBoardStore(
       board: null,
       async load() {
         set({ board: await repository.load() })
+      },
+      setTitle(input) {
+        const board = get().board
+        const title = input.trim()
+        if (!board || !title || title === board.title) return
+        commit({ ...board, title })
+      },
+      setSubtitle(input) {
+        const board = get().board
+        const subtitle = input.trim()
+        if (!board || subtitle === board.subtitle) return
+        commit({ ...board, subtitle })
       },
       createTask(input) {
         const board = get().board

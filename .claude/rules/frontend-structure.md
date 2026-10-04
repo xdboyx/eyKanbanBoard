@@ -42,6 +42,21 @@ pages → components / hooks → stores → services → types
 - `utils/` 與 `types/` 不 import React，也不 import `stores/`、`services/`。
 - `stores/` 透過注入的 repository 讀寫資料（ADR-0001），不直接碰 `localStorage` 或 `fetch`。
 
+## 測試 seam
+
+前端有兩個測試 seam，依「要驗證的是什麼」決定測試放哪裡：
+
+| seam | 驗證什麼 | 測試放在 |
+| --- | --- | --- |
+| `stores/` | 指令改變了什麼狀態，以及儲存行為：移動與排序、新增、編輯、刪除、完成日、欄位檢查、依序儲存、失敗還原、版本衝突、未授權 | `tests/stores/`，以記憶體中的假 repository 取代真實儲存 |
+| `utils/` | 從看板資料算出的畫面資料：搜尋篩選與符合數量、逾期、日期與優先級的呈現 | `tests/utils/`，直接呼叫純函式，「今天」、搜尋文字等以參數傳入 |
+
+- store 只保存狀態、提供指令，不提供衍生查詢；畫面需要的衍生資料寫成 `utils/` 的純函式，由 `hooks/`（例如 `useBoardView`）把 store 的狀態與純函式接起來。
+- 不在 store 裡的輸入不要為了測試搬進 store，例如搜尋文字在網址 `?q=`（ADR-0004）。
+- 同時牽涉兩邊的行為（例如搜尋中拖放時隱藏任務的順序）放在 store 測試，用 `utils/` 的函式算出畫面上看得到的任務來下指令與驗證。
+- 不測試 React 元件與 hook；hook 保持薄，邏輯放進可測試的 store 或純函式。
+- 這取代 #1 規格中「store 是前端唯一的測試 seam」的說法；issue 寫「store 測試涵蓋…」時，依上表放到對應的 seam。
+
 ## 命名
 
 - 元件：`PascalCase.tsx`，一個檔案一個主要元件，檔名與元件同名。
@@ -58,9 +73,9 @@ src/
 ├── components/
 │   ├── Button.tsx、ConfirmDialog.tsx、Drawer.tsx、icons.tsx、InlineTextEdit.tsx、ThemeToggle.tsx
 │   ├── board/        StatusColumn.tsx、TaskCard.tsx
-│   ├── layout/       AppHeader.tsx、NoticeBar.tsx
+│   ├── layout/       AppHeader.tsx、NoticeBar.tsx、TaskSearch.tsx
 │   └── task/         TaskDrawer.tsx
-├── hooks/            useBoardView.ts、useLeaveGuard.ts、useModalDialog.ts、useNotice.ts、useTask.ts、useTaskDrag.ts、useTheme.ts
+├── hooks/            useBoardSearch.ts、useBoardView.ts、useLeaveGuard.ts、useModalDialog.ts、useNotice.ts、useTask.ts、useTaskDrag.ts、useTheme.ts
 ├── pages/
 │   ├── board/        BoardPage.tsx
 │   └── tasks/        EditTaskPage.tsx、NewTaskPage.tsx

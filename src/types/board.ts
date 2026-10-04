@@ -98,6 +98,7 @@ export interface TaskView extends Task {
 export interface StatusView {
   status: Status
   name: string
+  /** 列出的任務數；搜尋中是符合的數量 */
   count: number
   tasks: TaskView[]
 }
@@ -106,6 +107,9 @@ export interface BoardView {
   title: string
   subtitle: string
   updatedAt: string
+  /** 全部任務的數量，不受搜尋影響 */
   totalTasks: number
+  /** 有搜尋文字，各狀態只列出符合的任務 */
+  searching: boolean
   statuses: StatusView[]
 }

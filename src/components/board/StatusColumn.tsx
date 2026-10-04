@@ -5,10 +5,13 @@ import { TaskCard } from './TaskCard'
 
 export function StatusColumn({
   status,
+  searching,
   drag,
   onMoveTask,
 }: {
   status: StatusView
+  /** 搜尋中，status 只有符合的任務 */
+  searching: boolean
   drag: TaskDrag
   onMoveTask: (taskId: string, direction: MoveDirection) => void
 }) {
@@ -45,7 +48,7 @@ export function StatusColumn({
         {markerBefore === null && <DropMarker />}
         {status.count === 0 && (
           <p className="m-0 border border-dashed border-rule px-4 py-6 text-center text-caption text-muted">
-            將任務拖曳到這裡
+            {searching ? '沒有符合的任務' : '將任務拖曳到這裡'}
           </p>
         )}
       </div>

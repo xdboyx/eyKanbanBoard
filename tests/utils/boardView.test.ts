@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createTask, type Board, type Status, type Task } from '../../src/types/board'
-import { toBoardView } from '../../src/utils/boardView'
+import { matchesSearch, toBoardView } from '../../src/utils/boardView'
 
 function task(id: string, fields: Partial<Omit<Task, 'id'>> = {}): Task {
   return createTask(id, { title: `任務 ${id}`, ...fields })
@@ -74,6 +74,68 @@ describe('畫面用的看板', () => {
       ['c', 'doing', 'done'],
       ['d', 'review', null],
     ])
+  })
+
+  describe('搜尋', () => {
+    const searchable = board({
+      tasks: {
+        a: task('a', { title: 'API 規格' }),
+        b: task('b', { title: '首頁', tag: 'Design' }),
+        c: task('c', { title: '部署', owner: '王小明' }),
+        d: task('d', { title: '測試' }),
+        e: task('e', { title: '設計審查', completedDate: '2026-10-01' }),
+      },
+      order: { todo: ['a', 'd'], doing: ['b'], review: ['c'], done: ['e'] },
+    })
+
+    function visibleIds(query: string) {
+      return toBoardView(searchable, TODAY, query).statuses.flatMap((s) => s.tasks.map((t) => t.id))
+    }
+
+    it('比對標題、標籤、負責人的子字串', () => {
+      expect(visibleIds('規')).toEqual(['a'])
+      expect(visibleIds('sig')).toEqual(['b'])
+      expect(visibleIds('小明')).toEqual(['c'])
+    })
+
+    it('不分大小寫，忽略前後空白', () => {
+      expect(visibleIds('api')).toEqual(['a'])
+      expect(visibleIds('DESIGN')).toEqual(['b'])
+      expect(visibleIds('  api  ')).toEqual(['a'])
+    })
+
+    it('不比對摘要與其他欄位', () => {
+      const task = createTask('x', { title: '首頁', summary: '設計稿', priority: 'high', dueDate: '2026-10-10' })
+      expect(matchesSearch(task, '設計')).toBe(false)
+      expect(matchesSearch(task, 'high')).toBe(false)
+      expect(matchesSearch(task, '10-10')).toBe(false)
+    })
+
+    it('沒有搜尋文字或只有空白時列出全部任務', () => {
+      expect(visibleIds('')).toEqual(['a', 'd', 'b', 'c', 'e'])
+      expect(visibleIds('   ')).toEqual(['a', 'd', 'b', 'c', 'e'])
+      expect(toBoardView(searchable, TODAY, '   ').searching).toBe(false)
+    })
+
+    it('各狀態的數量是符合的數量，任務總數仍是全部的數量', () => {
+      const view = toBoardView(searchable, TODAY, '設')
+      expect(view.searching).toBe(true)
+      expect(view.statuses.map((s) => [s.status, s.count])).toEqual([
+        ['todo', 0],
+        ['doing', 0],
+        ['review', 0],
+        ['done', 1],
+      ])
+      expect(view.totalTasks).toBe(5)
+    })
+
+    it('符合的任務維持保存的順序', () => {
+      const ordered = board({
+        tasks: { a: task('a', { tag: '研究' }), b: task('b'), c: task('c', { tag: '研究' }) },
+        order: { todo: ['c', 'b', 'a'], doing: [], review: [], done: [] },
+      })
+      expect(toBoardView(ordered, TODAY, '研究').statuses[0]!.tasks.map((t) => t.id)).toEqual(['c', 'a'])
+    })
   })
 
   describe('優先級與日期的呈現', () => {

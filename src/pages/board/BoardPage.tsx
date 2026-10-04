@@ -13,8 +13,9 @@ import type { ThemeStore } from '../../stores/themeStore'
 import type { MoveDirection } from '../../types/board'
 import { localDate } from '../../utils/date'
 
-export function BoardPage({ store, themeStore }: { store: BoardStore; themeStore: ThemeStore }) {
-  const view = useBoardView(store)
+/** 看板頁；query 是網址上的搜尋文字，只列出符合的任務 */
+export function BoardPage({ store, themeStore, query }: { store: BoardStore; themeStore: ThemeStore; query: string }) {
+  const view = useBoardView(store, query)
   const { theme, toggle } = useTheme(themeStore)
   const drag = useTaskDrag(view?.statuses ?? [], (taskId, { status, beforeId }) =>
     store.getState().moveTaskTo(taskId, status, beforeId),
@@ -62,7 +63,13 @@ export function BoardPage({ store, themeStore }: { store: BoardStore; themeStore
       <div className="grow overflow-x-auto px-17 pt-8 pb-10 max-md:px-6">
         <div className="grid min-w-[1184px] grid-cols-[repeat(4,minmax(280px,1fr))] items-stretch gap-4">
           {view.statuses.map((status) => (
-            <StatusColumn key={status.status} status={status} drag={drag} onMoveTask={moveTask} />
+            <StatusColumn
+              key={status.status}
+              status={status}
+              searching={view.searching}
+              drag={drag}
+              onMoveTask={moveTask}
+            />
           ))}
         </div>
       </div>

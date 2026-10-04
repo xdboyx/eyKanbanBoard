@@ -82,16 +82,16 @@ src/
 │   ├── board/        BoardPage.tsx
 │   ├── login/        LoginPage.tsx
 │   └── tasks/        EditTaskPage.tsx、NewTaskPage.tsx
-├── services/         authService.ts、boardRepository.ts、localAuthService.ts、localStorageBoardRepository.ts、sampleBoard.ts、themePreference.ts、workerAuthService.ts
+├── services/         authService.ts、boardRepository.ts、localAuthService.ts、localStorageBoardRepository.ts、sampleBoard.ts、themePreference.ts、workerAuthService.ts、workerBoardRepository.ts
 ├── stores/           authStore.ts、boardStore.ts、noticeStore.ts、themeStore.ts
 ├── styles/           index.css、theme.css
 ├── types/            board.ts、theme.ts
 └── utils/            board.ts、boardView.ts、date.ts、redirect.ts、taskDraft.ts
 
-worker/               Cloudflare Worker（/api/*）：index.ts、credentials.ts、session.ts
+worker/               Cloudflare Worker（/api/*）：index.ts、board.ts、credentials.ts、session.ts
 
 tests/                鏡像 src/ 與 worker/ 的路徑
-├── services/         localStorageBoardRepository.test.ts、themePreference.test.ts、workerAuthService.test.ts
+├── services/         localStorageBoardRepository.test.ts、themePreference.test.ts、workerAuthService.test.ts、workerBoardRepository.test.ts
 ├── stores/           authStore.test.ts、boardStore.test.ts、noticeStore.test.ts、themeStore.test.ts
 ├── utils/            boardView.test.ts、redirect.test.ts
 └── worker/           index.test.ts

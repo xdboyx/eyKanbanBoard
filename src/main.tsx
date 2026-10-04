@@ -5,7 +5,9 @@ import { createAppRouter } from './router'
 import type { AuthService } from './services/authService'
 import { createLocalAuthService } from './services/localAuthService'
 import { createWorkerAuthService } from './services/workerAuthService'
+import type { BoardRepository } from './services/boardRepository'
 import { createLocalStorageRepository, resetSampleBoard } from './services/localStorageBoardRepository'
+import { createWorkerBoardRepository } from './services/workerBoardRepository'
 import { createLocalStorageThemePreference } from './services/themePreference'
 import { createAuthStore } from './stores/authStore'
 import { createBoardStore } from './stores/boardStore'
@@ -24,11 +26,26 @@ const authService: AuthService = import.meta.env.DEV
     })
   : createWorkerAuthService()
 
+// 本地開發的看板存在 localStorage；正式建置改由 Worker 存進 KV（ADR-0001）
+const boardRepository: BoardRepository = import.meta.env.DEV
+  ? createLocalStorageRepository()
+  : createWorkerBoardRepository()
+
+const authStore = createAuthStore(authService)
+const noticeStore = createNoticeStore()
+
 const router = createAppRouter({
-  authStore: createAuthStore(authService),
-  store: createBoardStore(createLocalStorageRepository()),
+  authStore,
+  store: createBoardStore(boardRepository, {
+    onNotice: (message) => noticeStore.getState().show(message),
+    // 標記為未登入後重新執行路由守衛，導向登入頁並把目前的網址帶在 redirect
+    onUnauthorized: () => {
+      authStore.getState().expire()
+      void router.invalidate()
+    },
+  }),
   themeStore,
-  noticeStore: createNoticeStore(),
+  noticeStore,
 })
 
 // 主題寫在 <html data-theme> 上，所有頁面（包含登入頁）都依此換色

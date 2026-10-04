@@ -10,6 +10,7 @@ export function InlineTextEdit({
   value,
   label,
   placeholder,
+  maxLength,
   onSave,
 }: {
   value: string
@@ -17,6 +18,8 @@ export function InlineTextEdit({
   label: string
   /** value 是空字串時按鈕顯示的文字 */
   placeholder?: string
+  /** 輸入框最多可輸入的長度 */
+  maxLength?: number
   onSave: (value: string) => void
 }) {
   const [editing, setEditing] = useState(false)
@@ -68,6 +71,7 @@ export function InlineTextEdit({
         type="text"
         aria-label={label}
         value={draft}
+        maxLength={maxLength}
         autoFocus
         onFocus={(event) => event.currentTarget.select()}
         onChange={(event) => setDraft(event.target.value)}

@@ -1,6 +1,7 @@
 import { createStore } from 'zustand/vanilla'
-import type { BoardRepository } from '../services/boardRepository'
+import { BoardConflictError, UnauthorizedError, type BoardRepository } from '../services/boardRepository'
 import {
+  BOARD_TEXT_LIMITS,
   STATUSES,
   type Board,
   type MoveDirection,
@@ -11,15 +12,15 @@ import {
 } from '../types/board'
 import { statusOf } from '../utils/board'
 import { localDate } from '../utils/date'
-import { emptyTaskDraft, normalizeTaskDraft, toTaskDraft, validateTaskDraft } from '../utils/taskDraft'
+import { emptyTaskDraft, normalizeTaskDraft, textLength, toTaskDraft, validateTaskDraft } from '../utils/taskDraft'
 
 export interface BoardState {
   /** 尚未載入時為 null */
   board: Board | null
   load(): Promise<void>
-  /** 修改看板標題，去除前後空白；空白或沒有改變時不動 */
+  /** 修改看板標題，去除前後空白；空白、超過上限字數或沒有改變時不動 */
   setTitle(title: string): void
-  /** 修改看板副標，去除前後空白，可以留空；沒有改變時不動 */
+  /** 修改看板副標，去除前後空白，可以留空；超過上限字數或沒有改變時不動 */
   setSubtitle(subtitle: string): void
   /**
    * 建立任務，放在所選狀態的最上面；未填的欄位使用預設值（狀態為「待辦」）。
@@ -45,6 +46,10 @@ export interface BoardStoreOptions {
   now?: () => Date
   /** 產生新任務的 id；測試可注入固定的 id */
   newId?: () => string
+  /** 顯示頁首下方的提示，例如儲存失敗、版本衝突 */
+  onNotice?: (message: string) => void
+  /** 儲存時發現未登入或 session 已失效；由呼叫端導向登入頁 */
+  onUnauthorized?: () => void
 }
 
 export type BoardStore = ReturnType<typeof createBoardStore>
@@ -52,12 +57,23 @@ export type BoardStore = ReturnType<typeof createBoardStore>
 /**
  * 看板的全域狀態。資料存取透過 repository 注入，測試可換成記憶體實作（ADR-0001）。
  * 每個指令先更新畫面，再把整個看板排進儲存佇列，依序寫入、不並行（ADR-0003）。
+ * 儲存沒有成功時，畫面回到最後一次確認已保存的看板，排隊中的儲存也一併放棄，
+ * 因為它們都建立在沒有保存成功的修改之上。
  */
 export function createBoardStore(
   repository: BoardRepository,
-  { now = () => new Date(), newId = () => crypto.randomUUID() }: BoardStoreOptions = {},
+  {
+    now = () => new Date(),
+    newId = () => crypto.randomUUID(),
+    onNotice = () => {},
+    onUnauthorized = () => {},
+  }: BoardStoreOptions = {},
 ) {
   let saving = Promise.resolve()
+  /** 最後一次確認已保存的看板：載入的結果，或最後一次儲存成功時 repository 回傳的看板 */
+  let saved: Board | null = null
+  /** 放棄排隊中的儲存時遞增；排隊時記下的值與目前不同，就不再送出 */
+  let generation = 0
 
   /** 移入「已完成」時記錄完成日（以瀏覽器本地日期為準），在「已完成」內保留，移出時清除 */
   function completedDateAfterMove(task: Pick<Task, 'completedDate'>, from: Status | null, to: Status) {
@@ -70,26 +86,53 @@ export function createBoardStore(
     function commit(board: Board) {
       const next = { ...board, updatedAt: now().toISOString() }
       set({ board: next })
-      saving = saving
-        .then(() => repository.save(next))
-        .catch((error: unknown) => console.error('看板儲存失敗', error))
+      const queuedIn = generation
+      saving = saving.then(async () => {
+        const lastSaved = saved
+        if (queuedIn !== generation || !lastSaved) return
+        try {
+          // 排隊時的看板帶著當時的版本號，前面的儲存成功後版本號已經遞增，改送最後保存的版本號
+          saved = await repository.save({ ...next, version: lastSaved.version })
+        } catch (error) {
+          generation += 1
+          handleSaveError(error, lastSaved)
+        }
+      })
+    }
+
+    function handleSaveError(error: unknown, lastSaved: Board) {
+      if (error instanceof BoardConflictError) {
+        // 其他人已經更新了看板：放棄本地還沒保存的修改，改用目前保存的看板
+        saved = error.current
+        set({ board: error.current })
+        onNotice('看板已被其他人更新')
+      } else if (error instanceof UnauthorizedError) {
+        set({ board: lastSaved })
+        onUnauthorized()
+      } else {
+        console.error('看板儲存失敗', error)
+        set({ board: lastSaved })
+        onNotice('儲存失敗，已還原')
+      }
     }
 
     return {
       board: null,
       async load() {
-        set({ board: await repository.load() })
+        const board = await repository.load()
+        saved = board
+        set({ board })
       },
       setTitle(input) {
         const board = get().board
         const title = input.trim()
-        if (!board || !title || title === board.title) return
+        if (!board || !title || textLength(title) > BOARD_TEXT_LIMITS.title || title === board.title) return
         commit({ ...board, title })
       },
       setSubtitle(input) {
         const board = get().board
         const subtitle = input.trim()
-        if (!board || subtitle === board.subtitle) return
+        if (!board || textLength(subtitle) > BOARD_TEXT_LIMITS.subtitle || subtitle === board.subtitle) return
         commit({ ...board, subtitle })
       },
       createTask(input) {

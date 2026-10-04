@@ -10,7 +10,7 @@ import { useTaskDrag } from '../../hooks/useTaskDrag'
 import { useTheme } from '../../hooks/useTheme'
 import type { BoardStore } from '../../stores/boardStore'
 import type { ThemeStore } from '../../stores/themeStore'
-import type { MoveDirection } from '../../types/board'
+import { BOARD_TEXT_LIMITS, type MoveDirection } from '../../types/board'
 import { localDate } from '../../utils/date'
 
 /** 看板頁；query 是網址上的搜尋文字，只列出符合的任務 */
@@ -37,7 +37,12 @@ export function BoardPage({ store, themeStore, query }: { store: BoardStore; the
       <section className="flex flex-wrap items-end justify-between gap-6 bg-band px-17 pt-10 pb-8 text-text max-md:px-6">
         <div className="flex max-w-full flex-col gap-2">
           <h1 className="m-0 text-display">
-            <InlineTextEdit value={view.title} label="看板標題" onSave={(title) => store.getState().setTitle(title)} />
+            <InlineTextEdit
+              value={view.title}
+              label="看板標題"
+              maxLength={BOARD_TEXT_LIMITS.title}
+              onSave={(title) => store.getState().setTitle(title)}
+            />
           </h1>
           <ul className="meta-list text-body-loose text-muted">
             <li>{localDate(view.updatedAt)} 更新</li>
@@ -47,6 +52,7 @@ export function BoardPage({ store, themeStore, query }: { store: BoardStore; the
                 value={view.subtitle}
                 label="看板副標"
                 placeholder="新增副標"
+                maxLength={BOARD_TEXT_LIMITS.subtitle}
                 onSave={(subtitle) => store.getState().setSubtitle(subtitle)}
               />
             </li>

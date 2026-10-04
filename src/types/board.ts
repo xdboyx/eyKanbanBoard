@@ -54,7 +54,7 @@ export interface TaskDraft extends Pick<Task, 'title' | 'summary' | 'priority' |
   status: Status
 }
 
-/** 有長度限制的文字欄位與上限字數 */
+/** 有長度限制的文字欄位與上限字數；Worker 寫入時也以相同的上限檢查 */
 export const TASK_TEXT_LIMITS = {
   title: 100,
   summary: 500,
@@ -66,6 +66,12 @@ export type TaskTextField = keyof typeof TASK_TEXT_LIMITS
 
 /** 欄位檢查的結果：不合法的欄位對應到提示文字，全部合法時是空物件 */
 export type TaskDraftErrors = Partial<Record<TaskTextField, string>>
+
+/** 看板標題與副標的上限字數；Worker 寫入時也以相同的上限檢查 */
+export const BOARD_TEXT_LIMITS = {
+  title: 100,
+  subtitle: 100,
+} as const
 
 export interface Board {
   title: string

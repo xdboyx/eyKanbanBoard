@@ -17,6 +17,8 @@
 
 `src/` 根目錄只放進入點 `main.tsx` 與路由定義 `router.tsx`。測試不放在 `src/`，見下方「命名」。
 
+Worker 不是前端，不放在 `src/`：程式碼在專案根目錄的 `worker/`，入口是 `worker/index.ts`，不 import `src/` 的任何檔案。它的測試放在 `tests/worker/`，以 `@cloudflare/vitest-pool-workers` 在 Workers runtime 中執行（設定在 `vitest.worker.config.ts`），驗證 API 的請求與回應。
+
 ## 資料夾層級
 
 每個資料夾底下最多再兩層子資料夾，再深就不好找：
@@ -80,14 +82,17 @@ src/
 │   ├── board/        BoardPage.tsx
 │   ├── login/        LoginPage.tsx
 │   └── tasks/        EditTaskPage.tsx、NewTaskPage.tsx
-├── services/         authService.ts、boardRepository.ts、localAuthService.ts、localStorageBoardRepository.ts、sampleBoard.ts、themePreference.ts
+├── services/         authService.ts、boardRepository.ts、localAuthService.ts、localStorageBoardRepository.ts、sampleBoard.ts、themePreference.ts、workerAuthService.ts
 ├── stores/           authStore.ts、boardStore.ts、noticeStore.ts、themeStore.ts
 ├── styles/           index.css、theme.css
 ├── types/            board.ts、theme.ts
 └── utils/            board.ts、boardView.ts、date.ts、redirect.ts、taskDraft.ts
 
-tests/                鏡像 src/ 的路徑
-├── services/         localStorageBoardRepository.test.ts、themePreference.test.ts
+worker/               Cloudflare Worker（/api/*）：index.ts、credentials.ts、session.ts
+
+tests/                鏡像 src/ 與 worker/ 的路徑
+├── services/         localStorageBoardRepository.test.ts、themePreference.test.ts、workerAuthService.test.ts
 ├── stores/           authStore.test.ts、boardStore.test.ts、noticeStore.test.ts、themeStore.test.ts
-└── utils/            boardView.test.ts、redirect.test.ts
+├── utils/            boardView.test.ts、redirect.test.ts
+└── worker/           index.test.ts
 ```

@@ -15,7 +15,8 @@ export function LoginPage({ authStore, redirect }: { authStore: AuthStore; redir
   const navigate = useNavigate()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [failed, setFailed] = useState(false)
+  // invalid：帳密錯誤；unavailable：驗證服務出錯或連不上
+  const [error, setError] = useState<'invalid' | 'unavailable' | null>(null)
   const [pending, setPending] = useState(false)
   const id = useId()
 
@@ -27,16 +28,18 @@ export function LoginPage({ authStore, redirect }: { authStore: AuthStore; redir
       if (await authStore.getState().login(username, password)) {
         await navigate({ href: loginRedirectTarget(redirect), replace: true })
       } else {
-        setFailed(true)
+        setError('invalid')
       }
+    } catch {
+      setError('unavailable')
     } finally {
       setPending(false)
     }
   }
 
   const errorProps = {
-    'aria-invalid': failed,
-    'aria-describedby': failed ? `${id}-error` : undefined,
+    'aria-invalid': error === 'invalid',
+    'aria-describedby': error ? `${id}-error` : undefined,
   }
 
   return (
@@ -74,9 +77,9 @@ export function LoginPage({ authStore, redirect }: { authStore: AuthStore; redir
               className={inputClassName}
             />
           </div>
-          {failed && (
+          {error && (
             <p id={`${id}-error`} role="alert" className="m-0 text-small">
-              帳號或密碼錯誤
+              {error === 'invalid' ? '帳號或密碼錯誤' : '目前無法登入，請稍後再試'}
             </p>
           )}
           <Button type="submit" variant="primary" disabled={pending} className="w-full">

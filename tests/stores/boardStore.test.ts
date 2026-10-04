@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { BoardRepository } from '../../src/services/boardRepository'
 import { createTask, type Board, type TaskDraft } from '../../src/types/board'
 import { createBoardStore } from '../../src/stores/boardStore'
+import { toBoardView } from '../../src/utils/boardView'
 
 const saved: Board = {
   title: '測試看板',
@@ -327,6 +328,70 @@ describe('看板 store', () => {
 
       expect(store.getState().board!.updatedAt).toBe(NOW.toISOString())
       expect(saves).toEqual([store.getState().board])
+    })
+  })
+
+  describe('搜尋中拖放', () => {
+    // 搜尋「設計」時，待辦只看得到 s1、s2、s3，h1、h2 被隱藏
+    const searched: Board = {
+      ...saved,
+      tasks: {
+        s1: createTask('s1', { title: '首頁設計' }),
+        h1: createTask('h1', { title: '撰寫文件' }),
+        s2: createTask('s2', { title: '登入頁', tag: '設計' }),
+        h2: createTask('h2', { title: '部署' }),
+        s3: createTask('s3', { title: '報表', owner: '設計組' }),
+        s4: createTask('s4', { title: '圖示設計' }),
+        h3: createTask('h3', { title: '測試' }),
+      },
+      order: { todo: ['s1', 'h1', 's2', 'h2', 's3'], doing: ['h3', 's4'], review: [], done: [] },
+    }
+
+    /** 搜尋中畫面上看得到的各狀態任務 id */
+    function visible(board: Board, query: string) {
+      return Object.fromEntries(toBoardView(board, '2026-10-05', query).statuses.map((s) => [s.status, s.tasks.map((t) => t.id)]))
+    }
+
+    it('放在看得到的任務之前，隱藏的任務維持原本的相對順序', async () => {
+      const store = await loadedStore(inMemoryRepository(searched).repository)
+      expect(visible(searched, '設計').todo).toEqual(['s1', 's2', 's3'])
+
+      store.getState().moveTaskTo('s3', 'todo', 's1')
+
+      const board = store.getState().board!
+      expect(visible(board, '設計').todo).toEqual(['s3', 's1', 's2'])
+      expect(board.order.todo).toEqual(['s3', 's1', 'h1', 's2', 'h2'])
+    })
+
+    it('從其他狀態拖進來時，放在看得到的任務之前，兩邊隱藏的任務順序都不變', async () => {
+      const store = await loadedStore(inMemoryRepository(searched).repository)
+
+      store.getState().moveTaskTo('s4', 'todo', 's2')
+
+      const board = store.getState().board!
+      expect(visible(board, '設計')).toEqual({ todo: ['s1', 's4', 's2', 's3'], doing: [], review: [], done: [] })
+      expect(board.order.todo).toEqual(['s1', 'h1', 's4', 's2', 'h2', 's3'])
+      expect(board.order.doing).toEqual(['h3'])
+    })
+
+    it('放到最後面時排在所有任務之後，隱藏的任務順序不變', async () => {
+      const store = await loadedStore(inMemoryRepository(searched).repository)
+
+      store.getState().moveTaskTo('s1', 'todo', null)
+
+      const board = store.getState().board!
+      expect(visible(board, '設計').todo).toEqual(['s2', 's3', 's1'])
+      expect(board.order.todo).toEqual(['h1', 's2', 'h2', 's3', 's1'])
+    })
+
+    it('用按鈕移動時放在下一個狀態的最下面', async () => {
+      const store = await loadedStore(inMemoryRepository(searched).repository)
+
+      store.getState().moveTask('s2', 'next')
+
+      const board = store.getState().board!
+      expect(board.order.todo).toEqual(['s1', 'h1', 'h2', 's3'])
+      expect(board.order.doing).toEqual(['h3', 's4', 's2'])
     })
   })
 })

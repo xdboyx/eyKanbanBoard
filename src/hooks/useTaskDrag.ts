@@ -15,6 +15,8 @@ export type TaskDrag = ReturnType<typeof useTaskDrag>
 /**
  * 拖放任務：記錄被拖的任務與滑過的放開位置，放開時交給 onDrop。
  * 滑過卡片上半部放在該任務之前、下半部放在下一個任務之前；滑過狀態的空白處維持上一個位置，剛進入時放在最後面。
+ * statuses 是畫面上看得到的任務（搜尋中只有符合的任務），放開位置只依它們決定；
+ * 在看得到的任務之間位置沒有改變時不交給 onDrop，被隱藏的任務也就不會被越過。
  */
 export function useTaskDrag(statuses: StatusView[], onDrop: (taskId: string, target: DropTarget) => void) {
   const [draggingId, setDraggingId] = useState<string | null>(null)
@@ -62,7 +64,7 @@ export function useTaskDrag(statuses: StatusView[], onDrop: (taskId: string, tar
         },
         onDrop(event) {
           event.preventDefault()
-          if (draggingId && target) onDrop(draggingId, target)
+          if (draggingId && target && !isCurrentPosition(target)) onDrop(draggingId, target)
           end()
         },
       }

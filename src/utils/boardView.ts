@@ -4,14 +4,18 @@ import { shortDate } from './date'
 /**
  * 看板資料 → 畫面用的看板：依固定順序列出四種狀態，每種狀態依保存的順序列出任務。
  * today 是使用者本地的今天（YYYY-MM-DD），用來判斷逾期與日期要不要顯示年份。
+ * 有搜尋文字時，各狀態只列出符合的任務與數量；任務總數仍是全部的數量。
  */
-export function toBoardView(board: Board, today: string): BoardView {
+export function toBoardView(board: Board, today: string, query = ''): BoardView {
+  let totalTasks = 0
   const statuses = STATUSES.map((status, index) => {
     const prevStatus = STATUSES[index - 1] ?? null
     const nextStatus = STATUSES[index + 1] ?? null
     const tasks = board.order[status].flatMap((id) => {
       const task = board.tasks[id]
       if (!task) return []
+      totalTasks++
+      if (!matchesSearch(task, query)) return []
       return { ...task, prevStatus, nextStatus, ...presentation(task, status === 'done', today) }
     })
     return { status, name: STATUS_NAMES[status], count: tasks.length, tasks }
@@ -20,9 +24,16 @@ export function toBoardView(board: Board, today: string): BoardView {
     title: board.title,
     subtitle: board.subtitle,
     updatedAt: board.updatedAt,
-    totalTasks: statuses.reduce((sum, s) => sum + s.count, 0),
+    totalTasks,
+    searching: query.trim() !== '',
     statuses,
   }
+}
+
+/** 標題、標籤或負責人包含搜尋文字（不分大小寫、去除前後空白）；搜尋文字空白時都符合 */
+export function matchesSearch(task: Pick<Task, 'title' | 'tag' | 'owner'>, query: string): boolean {
+  const needle = query.trim().toLocaleLowerCase()
+  return [task.title, task.tag, task.owner].some((text) => text.toLocaleLowerCase().includes(needle))
 }
 
 /** 依狀態、優先級與今天推導出的呈現方式；已完成的任務不顯示優先級與逾期 */

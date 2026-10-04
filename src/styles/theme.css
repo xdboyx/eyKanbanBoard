@@ -1,0 +1,118 @@
+/* 主題：設計系統 token 與依主題（深色、一般模式）變化的語意色。
+   index.css 會載入這個檔案；這裡只定義變數，不寫任何元件或頁面樣式。 */
+
+/* 設計系統 token，數值來自 DESIGN.md 與設計系統的元件樣式（bundle.css）。
+   清掉 Tailwind 預設的色盤、字級與字重，只留設計系統的值。 */
+@theme {
+  --color-*: initial;
+  --color-accent-yellow: #ffe600;
+  --color-ink-900: #1a1a24;
+  --color-ink-800: #2e2e38;
+  --color-gray-600: #747480;
+  --color-gray-300: #c4c4cd;
+  --color-gray-250: #cacad1;
+  --color-gray-100: #eaeaf2;
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-divider-on-dark: rgb(255 255 255 / 0.2);
+  --color-transparent: transparent;
+
+  --font-*: initial;
+  --font-sans: 'Brand Sans', 'Noto Sans', sans-serif;
+  --font-cjk: georgia, 青黑体, 'Hiragino Sans GB', 微软雅黑, 'Microsoft YaHei', 黑体, simhei, serif;
+
+  --font-weight-*: initial;
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-bold: 700;
+
+  --text-*: initial;
+  --text-display: 40px;
+  --text-display--line-height: 48px;
+  --text-display--font-weight: 300;
+  --text-h2: 32px;
+  --text-h2--line-height: 38.4px;
+  --text-h2--font-weight: 300;
+  --text-card-title: 24px;
+  --text-card-title--line-height: 28.8px;
+  --text-card-title--font-weight: 300;
+  --text-h3: 20px;
+  --text-h3--line-height: 32px;
+  --text-h3--font-weight: 400;
+  --text-lead: 18px;
+  --text-lead--line-height: 21.6px;
+  --text-lead--font-weight: 300;
+  --text-body: 16px;
+  --text-body--line-height: 24px;
+  --text-body--font-weight: 300;
+  --text-body-loose: 16px;
+  --text-body-loose--line-height: 28px;
+  --text-body-loose--font-weight: 300;
+  --text-label: 16px;
+  --text-label--line-height: 22px;
+  --text-label--font-weight: 700;
+  --text-small: 14px;
+  --text-small--line-height: 22px;
+  --text-small--font-weight: 700;
+  --text-caption: 14px;
+  --text-caption--line-height: 21px;
+  --text-caption--font-weight: 400;
+  /* 品牌字標（bundle.css 的 ps-wordmark） */
+  --text-wordmark: 20px;
+  --text-wordmark--line-height: 24px;
+  --text-wordmark--font-weight: 700;
+
+  /* 間距沿用 Tailwind 的 4px 基數：p-3=12px、p-17=68px */
+  --spacing: 4px;
+
+  --radius-*: initial;
+  --radius-sm: 3px;
+
+  --shadow-*: initial;
+  --shadow-elevation-1: 0px 8px 10px 0px rgb(46 46 56 / 0.3);
+
+  --breakpoint-*: initial;
+  --breakpoint-sm: 600px;
+  --breakpoint-md: 900px;
+  --breakpoint-lg: 1200px;
+}
+
+/* 依主題變化的語意色，值取自設計稿「A＋B｜可拖放看板」的深色與一般模式 */
+@theme inline {
+  --color-page: var(--theme-page);
+  --color-band: var(--theme-band);
+  --color-card: var(--theme-card);
+  --color-text: var(--theme-text);
+  --color-muted: var(--theme-muted);
+  --color-rule: var(--theme-rule);
+  --color-feature: var(--theme-feature);
+  /* 拖放時放開位置的指示線與滑過狀態的底色 */
+  --color-marker: var(--theme-marker);
+  --color-drop: var(--theme-drop);
+}
+
+:root {
+  color-scheme: dark;
+  --theme-page: var(--color-ink-800);
+  --theme-band: var(--color-ink-900);
+  --theme-card: var(--color-ink-900);
+  --theme-text: var(--color-white);
+  --theme-muted: var(--color-gray-300);
+  --theme-rule: var(--color-divider-on-dark);
+  --theme-feature: var(--color-accent-yellow);
+  --theme-marker: var(--color-white);
+  --theme-drop: rgb(255 255 255 / 0.04);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --theme-page: var(--color-gray-100);
+  --theme-band: var(--color-white);
+  --theme-card: var(--color-white);
+  --theme-text: var(--color-ink-800);
+  --theme-muted: var(--color-ink-800);
+  --theme-rule: var(--color-gray-300);
+  --theme-feature: var(--color-ink-800);
+  --theme-marker: var(--color-ink-800);
+  --theme-drop: rgb(46 46 56 / 0.04);
+}

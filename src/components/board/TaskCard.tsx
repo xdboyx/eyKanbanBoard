@@ -1,7 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import type { HTMLAttributes } from 'react'
 import { STATUS_NAMES, type MoveDirection, type Status, type TaskView } from '../../types/board'
-import { monthDay } from '../../utils/date'
 import { ChevronLeftIcon, ChevronRightIcon } from '../icons'
 
 export function TaskCard({
@@ -18,9 +17,6 @@ export function TaskCard({
   onMove: (direction: MoveDirection) => void
 }) {
   const { done } = task
-  const date = done
-    ? task.completedDate && `${monthDay(task.completedDate)} 完成`
-    : task.dueDate && monthDay(task.dueDate)
 
   return (
     <article
@@ -57,7 +53,8 @@ export function TaskCard({
       )}
       <div className="flex items-center justify-between gap-3">
         <ul className="meta-list text-caption text-muted">
-          {date && <li>{date}</li>}
+          {task.dateText && <li>{task.dateText}</li>}
+          {task.priorityText && <li>{task.priorityText}</li>}
           {task.owner && <li>{task.owner}</li>}
         </ul>
         <div className="relative z-1 flex flex-none gap-1">

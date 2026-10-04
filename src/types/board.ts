@@ -87,6 +87,12 @@ export interface TaskView extends Task {
   done: boolean
   /** 高優先級且不在「已完成」：以醒目樣式呈現並顯示摘要 */
   featured: boolean
+  /** 有到期日、到期日早於今天，且不在「已完成」 */
+  overdue: boolean
+  /** 資訊列的日期：已完成顯示完成日，其他顯示到期日，逾期時在後面加「逾期」；沒有日期時為 null */
+  dateText: string | null
+  /** 資訊列的優先級：中、低優先級且不在「已完成」時顯示，例如「優先：中」；其他為 null */
+  priorityText: string | null
 }
 
 export interface StatusView {

@@ -121,6 +121,25 @@ describe('GET /api/session', () => {
     expect((await session(cookie, rotated)).status).toBe(401)
     expect((await session(await loginCookie(rotated), rotated)).status).toBe(204)
   })
+
+  it('更換密碼後舊 cookie 失效', async () => {
+    const cookie = await loginCookie()
+    const changed = { ...env, APP_PASSWORD: 'new-secret' }
+
+    expect((await session(cookie, changed)).status).toBe(401)
+  })
+
+  it('更換帳號後舊 cookie 失效', async () => {
+    const cookie = await loginCookie()
+
+    expect((await session(cookie, { ...env, APP_USERNAME: 'owner' })).status).toBe(401)
+  })
+
+  it('後台的帳密被移除時，既有 cookie 失效', async () => {
+    const cookie = await loginCookie()
+
+    expect((await session(cookie, { ...env, APP_PASSWORD: '' })).status).toBe(401)
+  })
 })
 
 describe('POST /api/logout', () => {

@@ -35,9 +35,9 @@ export default {
 } satisfies ExportedHandler<Env>
 
 async function login(request: Request, env: Env): Promise<Response> {
-  const { APP_USERNAME, APP_PASSWORD, SESSION_SECRET } = env
+  const settings = authSettings(env)
   // 未設定時一律無法登入，不會因為兩邊都是空字串而通過
-  if (!APP_USERNAME || !APP_PASSWORD || !SESSION_SECRET) {
+  if (!settings) {
     console.error('APP_USERNAME、APP_PASSWORD 或 SESSION_SECRET 未設定，無法登入')
     return new Response('Server Misconfigured', { status: 500 })
   }
@@ -45,13 +45,13 @@ async function login(request: Request, env: Env): Promise<Response> {
   const input = await readCredentials(request)
   if (!input) return new Response('Bad Request', { status: 400 })
 
-  if (!(await credentialsMatch(input, { username: APP_USERNAME, password: APP_PASSWORD }))) {
+  if (!(await credentialsMatch(input, settings))) {
     await new Promise((resolve) => setTimeout(resolve, LOGIN_FAILURE_DELAY_MS))
     return new Response(null, { status: 401 })
   }
   return new Response(null, {
     status: 204,
-    headers: { 'Set-Cookie': await createSessionCookie(SESSION_SECRET, Date.now()) },
+    headers: { 'Set-Cookie': await createSessionCookie(sessionKey(settings), Date.now()) },
   })
 }
 
@@ -60,8 +60,30 @@ function logout(): Response {
 }
 
 async function session(request: Request, env: Env): Promise<Response> {
-  const valid = !!env.SESSION_SECRET && (await hasValidSession(request, env.SESSION_SECRET, Date.now()))
+  const settings = authSettings(env)
+  const valid = !!settings && (await hasValidSession(request, sessionKey(settings), Date.now()))
   return new Response(null, { status: valid ? 204 : 401 })
+}
+
+interface AuthSettings {
+  username: string
+  password: string
+  sessionSecret: string
+}
+
+/** 後台的帳密與簽章金鑰；任一個未設定時回傳 null */
+function authSettings(env: Env): AuthSettings | null {
+  const { APP_USERNAME, APP_PASSWORD, SESSION_SECRET } = env
+  if (!APP_USERNAME || !APP_PASSWORD || !SESSION_SECRET) return null
+  return { username: APP_USERNAME, password: APP_PASSWORD, sessionSecret: SESSION_SECRET }
+}
+
+/**
+ * session cookie 的簽章金鑰，除了 SESSION_SECRET 也包含帳號與密碼：
+ * 更換其中任何一個，既有的 session 都會失效（ADR-0002）。帳密只用來計算簽章，不會出現在 cookie 中
+ */
+function sessionKey({ username, password, sessionSecret }: AuthSettings): string {
+  return [sessionSecret, username, password].join('\0')
 }
 
 /** body 為 { username, password }，格式不對時回傳 null */

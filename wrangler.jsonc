@@ -7,6 +7,9 @@
   // APP_USERNAME、APP_PASSWORD、SESSION_SECRET 在 Cloudflare 後台設定（ADR-0002）；
   // 部署時保留後台的變數，不被這個檔案覆蓋
   "keep_vars": true,
+  // PR 分支由 Workers Builds 以 `wrangler preview` 部署成預覽，必須有這個區塊。
+  // 預覽不繼承正式環境的變數與 Secret，目前沒有設定，所以預覽網址無法登入
+  "previews": {},
   // 前端的建置產物：/api/* 交給 Worker，其他路徑回傳靜態檔案，找不到時回傳 index.html
   "assets": {
     "directory": "./dist",

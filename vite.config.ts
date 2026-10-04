@@ -5,6 +5,17 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   test: {
-    environment: 'node',
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'app',
+          environment: 'node',
+          include: ['tests/**/*.test.ts'],
+          exclude: ['tests/worker/**'],
+        },
+      },
+      './vitest.worker.config.ts',
+    ],
   },
 })

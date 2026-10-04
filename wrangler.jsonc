@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Cloudflare 後台的 Worker 名稱必須與這裡相同，Workers Builds 才能部署
+  "name": "eykanbanboard",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-08-15",
+  // APP_USERNAME、APP_PASSWORD、SESSION_SECRET 在 Cloudflare 後台設定（ADR-0002）；
+  // 部署時保留後台的變數，不被這個檔案覆蓋
+  "keep_vars": true,
+  // 前端的建置產物：/api/* 交給 Worker，其他路徑回傳靜態檔案，找不到時回傳 index.html
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  }
+}

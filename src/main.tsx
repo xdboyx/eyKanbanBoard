@@ -4,6 +4,7 @@ import { RouterProvider } from '@tanstack/react-router'
 import { createAppRouter } from './router'
 import type { AuthService } from './services/authService'
 import { createLocalAuthService } from './services/localAuthService'
+import { createWorkerAuthService } from './services/workerAuthService'
 import { createLocalStorageRepository, resetSampleBoard } from './services/localStorageBoardRepository'
 import { createLocalStorageThemePreference } from './services/themePreference'
 import { createAuthStore } from './stores/authStore'
@@ -15,14 +16,13 @@ import './styles/index.css'
 
 const themeStore = createThemeStore(createLocalStorageThemePreference())
 
-// 本地模擬登入只在開發模式使用；正式建置時這個分支連同 .env.local 的帳密一起被移除（ADR-0001）。
-// 正式環境的 Worker 驗證完成前（#11），正式建置一律視為未登入
+// 本地模擬登入只在開發模式使用；正式建置時這個分支連同 .env.local 的帳密一起被移除，改由 Worker 驗證（ADR-0001）
 const authService: AuthService = import.meta.env.DEV
   ? createLocalAuthService({
       username: import.meta.env.VITE_APP_USERNAME,
       password: import.meta.env.VITE_APP_PASSWORD,
     })
-  : { checkSession: async () => false, login: async () => false, logout: async () => {} }
+  : createWorkerAuthService()
 
 const router = createAppRouter({
   authStore: createAuthStore(authService),

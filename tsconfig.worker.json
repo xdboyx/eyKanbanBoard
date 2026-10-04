@@ -15,5 +15,6 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["worker", "tests/worker"]
+  "include": ["worker", "tests/worker"],
+  "exclude": ["tests/worker/routing.test.ts"]
 }

@@ -9,6 +9,8 @@ export interface AuthState {
   /** 帳密正確時登入並回傳 true，錯誤時回傳 false */
   login(username: string, password: string): Promise<boolean>
   logout(): Promise<void>
+  /** 呼叫 API 時發現 session 已失效：標記為未登入，下一次檢查會導向登入頁 */
+  expire(): void
 }
 
 export type AuthStore = ReturnType<typeof createAuthStore>
@@ -31,6 +33,9 @@ export function createAuthStore(service: AuthService) {
     },
     async logout() {
       await service.logout()
+      set({ authenticated: false })
+    },
+    expire() {
       set({ authenticated: false })
     },
   }))

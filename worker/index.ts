@@ -1,3 +1,4 @@
+import { loadBoard, parseBoard, saveBoard } from './board'
 import { credentialsMatch } from './credentials'
 import { clearSessionCookie, createSessionCookie, hasValidSession } from './session'
 
@@ -9,6 +10,8 @@ export interface Env {
   APP_PASSWORD?: string
   /** Secret：session cookie 的簽章金鑰，更換後所有人都要重新登入 */
   SESSION_SECRET?: string
+  /** 存放看板的 KV namespace，綁定設定在 wrangler.jsonc（ADR-0003） */
+  BOARD_KV: KVNamespace
 }
 
 /** 帳密錯誤時延遲回應，拖慢暴力破解 */
@@ -28,6 +31,10 @@ export default {
         return request.method === 'POST' ? logout() : methodNotAllowed('POST')
       case '/api/session':
         return request.method === 'GET' ? session(request, env) : methodNotAllowed('GET')
+      case '/api/board':
+        if (request.method !== 'GET' && request.method !== 'PUT') return methodNotAllowed('GET, PUT')
+        if (!(await authorized(request, env))) return new Response(null, { status: 401 })
+        return request.method === 'GET' ? getBoard(env) : putBoard(request, env)
       default:
         return new Response('Not Found', { status: 404 })
     }
@@ -60,9 +67,40 @@ function logout(): Response {
 }
 
 async function session(request: Request, env: Env): Promise<Response> {
+  return new Response(null, { status: (await authorized(request, env)) ? 204 : 401 })
+}
+
+/** 看板文件；KV 還沒有資料時是空看板 */
+async function getBoard(env: Env): Promise<Response> {
+  return boardResponse(await loadBoard(env.BOARD_KV, new Date()))
+}
+
+/**
+ * 寫入整個看板。body 的 version 是前端讀到的版本號：與目前資料相符時寫入版本 +1、
+ * 更新最後更新時間並回傳新文件；不符時回 409 並附上目前文件，讓前端改用最新資料（ADR-0003）
+ */
+async function putBoard(request: Request, env: Env): Promise<Response> {
+  const input = parseBoard(await request.json().catch(() => null))
+  if (!input) return new Response('Bad Request', { status: 400 })
+
+  const now = new Date()
+  const current = await loadBoard(env.BOARD_KV, now)
+  if (input.version !== current.version) return boardResponse(current, 409)
+
+  const next = { ...input, version: current.version + 1, updatedAt: now.toISOString() }
+  await saveBoard(env.BOARD_KV, next)
+  return boardResponse(next)
+}
+
+/** 看板內容隨時會被其他人更新，不讓瀏覽器快取 */
+function boardResponse(board: unknown, status = 200): Response {
+  return Response.json(board, { status, headers: { 'Cache-Control': 'no-store' } })
+}
+
+/** request 帶有有效的 session cookie；後台未設定帳密或簽章金鑰時一律視為未登入 */
+async function authorized(request: Request, env: Env): Promise<boolean> {
   const settings = authSettings(env)
-  const valid = !!settings && (await hasValidSession(request, sessionKey(settings), Date.now()))
-  return new Response(null, { status: valid ? 204 : 401 })
+  return !!settings && (await hasValidSession(request, sessionKey(settings), Date.now()))
 }
 
 interface AuthSettings {

@@ -7,8 +7,12 @@
   // APP_USERNAME、APP_PASSWORD、SESSION_SECRET 在 Cloudflare 後台設定（ADR-0002）；
   // 部署時保留後台的變數，不被這個檔案覆蓋
   "keep_vars": true,
+  // 看板存在這個 KV namespace（ADR-0003）。不寫 id：部署時 wrangler 沿用 Worker 已綁定的 BOARD_KV，
+  // 還沒有綁定時自動建立一個新的 namespace 並綁定
+  "kv_namespaces": [{ "binding": "BOARD_KV" }],
   // PR 分支由 Workers Builds 以 `wrangler preview` 部署成預覽，必須有這個區塊。
-  // 預覽不繼承正式環境的變數與 Secret，目前沒有設定，所以預覽網址無法登入
+  // 預覽不繼承正式環境的變數、Secret 與 KV，目前沒有設定，所以預覽網址無法登入。
+  // 之後要在預覽使用看板時，在這裡的 kv_namespaces 綁定另一個預覽用的 KV，不要綁正式的
   "previews": {},
   // 前端的建置產物：/api/* 交給 Worker，其他路徑回傳靜態檔案，找不到時回傳 index.html
   "assets": {

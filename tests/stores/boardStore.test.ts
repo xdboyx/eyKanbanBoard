@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { BoardRepository } from '../../src/services/boardRepository'
+import { BoardConflictError, UnauthorizedError, type BoardRepository } from '../../src/services/boardRepository'
 import { createTask, type Board, type TaskDraft } from '../../src/types/board'
-import { createBoardStore } from '../../src/stores/boardStore'
+import { createBoardStore, type BoardStoreOptions } from '../../src/stores/boardStore'
 import { toBoardView } from '../../src/utils/boardView'
 
 const saved: Board = {
@@ -21,19 +21,38 @@ const saved: Board = {
 // UTC 中午，讓 UTC-11～UTC+11 的本地日期都是 2026-10-05
 const NOW = new Date('2026-10-05T12:00:00.000Z')
 
+/**
+ * 記憶體中的看板 repository，與 Worker 一樣檢查版本號：相符時保存並遞增版本號，不符時拋出 BoardConflictError。
+ * saves 是每次保存成功時收到的看板；failNext 讓下一次儲存拋出指定的錯誤；updateByOthers 模擬其他人寫入
+ */
 function inMemoryRepository(initial: Board) {
+  let stored = structuredClone(initial)
   const saves: Board[] = []
+  const failures: Error[] = []
   const repository: BoardRepository = {
-    load: async () => structuredClone(initial),
+    load: async () => structuredClone(stored),
     save: async (board) => {
+      const failure = failures.shift()
+      if (failure) throw failure
+      if (board.version !== stored.version) throw new BoardConflictError(structuredClone(stored))
       saves.push(structuredClone(board))
+      stored = { ...structuredClone(board), version: board.version + 1 }
+      return structuredClone(stored)
     },
   }
-  return { repository, saves }
+  return {
+    repository,
+    saves,
+    failNext: (error: Error) => failures.push(error),
+    updateByOthers: (change: Partial<Board>) => {
+      stored = { ...stored, ...change, version: stored.version + 1 }
+      return structuredClone(stored)
+    },
+  }
 }
 
-async function loadedStore(repository: BoardRepository) {
-  const store = createBoardStore(repository, { now: () => NOW, newId: () => 'new' })
+async function loadedStore(repository: BoardRepository, options: BoardStoreOptions = {}) {
+  const store = createBoardStore(repository, { now: () => NOW, newId: () => 'new', ...options })
   await store.getState().load()
   return store
 }
@@ -68,6 +87,21 @@ describe('看板 store', () => {
 
       expect(store.getState().board).toEqual(saved)
       expect(saves).toEqual([])
+    })
+
+    it('標題與副標最多 100 字，超過時不修改，也不會儲存', async () => {
+      const { repository, saves } = inMemoryRepository(saved)
+      const store = await loadedStore(repository)
+
+      store.getState().setTitle('看'.repeat(101))
+      store.getState().setSubtitle('看'.repeat(101))
+      await store.getState().waitForSaves()
+      expect(store.getState().board).toEqual(saved)
+      expect(saves).toEqual([])
+
+      store.getState().setTitle(` ${'看'.repeat(100)} `)
+      store.getState().setSubtitle('😀'.repeat(100))
+      expect(store.getState().board).toMatchObject({ title: '看'.repeat(100), subtitle: '😀'.repeat(100) })
     })
 
     it('副標可以清空', async () => {
@@ -178,7 +212,7 @@ describe('看板 store', () => {
         save: (board) =>
           new Promise((resolve) => {
             started.push(structuredClone(board))
-            finishers.push(resolve)
+            finishers.push(() => resolve({ ...board, version: board.version + 1 }))
           }),
       }
       const store = await loadedStore(repository)
@@ -196,31 +230,6 @@ describe('看板 store', () => {
       finishers[1]!()
       await store.getState().waitForSaves()
       expect(started).toHaveLength(2)
-    })
-
-    it('某次儲存失敗時記錄錯誤，之後的儲存仍會執行', async () => {
-      const logError = vi.spyOn(console, 'error').mockImplementation(() => {})
-      const saves: Board[] = []
-      let fail = true
-      const repository: BoardRepository = {
-        load: async () => structuredClone(saved),
-        save: async (board) => {
-          if (fail) {
-            fail = false
-            throw new Error('儲存失敗')
-          }
-          saves.push(structuredClone(board))
-        },
-      }
-      const store = await loadedStore(repository)
-
-      store.getState().moveTask('a', 'next')
-      store.getState().moveTask('a', 'next')
-      await store.getState().waitForSaves()
-
-      expect(saves).toEqual([store.getState().board])
-      expect(logError).toHaveBeenCalledOnce()
-      logError.mockRestore()
     })
   })
 
@@ -393,6 +402,124 @@ describe('看板 store', () => {
       expect(board.order.todo).toEqual(['s1', 'h1', 'h2', 's3'])
       expect(board.order.doing).toEqual(['h3', 's4', 's2'])
     })
+  })
+})
+
+describe('儲存失敗、版本衝突與未授權', () => {
+  it('連續儲存時，每次送出前一次儲存後的版本號', async () => {
+    const { repository, saves } = inMemoryRepository(saved)
+    const store = await loadedStore(repository)
+
+    store.getState().moveTask('a', 'next')
+    store.getState().moveTask('a', 'next')
+    store.getState().setTitle('新標題')
+    await store.getState().waitForSaves()
+
+    expect(saves.map((board) => board.version)).toEqual([1, 2, 3])
+    expect(saves[2]).toMatchObject({ title: '新標題', order: { review: ['c', 'a'] } })
+  })
+
+  it('儲存失敗時畫面還原到操作前，並顯示「儲存失敗，已還原」', async () => {
+    const logError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const onNotice = vi.fn()
+    const { repository, saves, failNext } = inMemoryRepository(saved)
+    const store = await loadedStore(repository, { onNotice })
+    failNext(new Error('網路錯誤'))
+
+    store.getState().moveTask('a', 'next')
+    expect(store.getState().board!.order.doing).toEqual(['b', 'a'])
+    await store.getState().waitForSaves()
+
+    expect(store.getState().board).toEqual(saved)
+    expect(saves).toEqual([])
+    expect(onNotice).toHaveBeenCalledExactlyOnceWith('儲存失敗，已還原')
+    expect(logError).toHaveBeenCalledOnce()
+    logError.mockRestore()
+  })
+
+  it('儲存失敗時，排隊中的儲存一併放棄，畫面回到最後一次保存的看板', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const onNotice = vi.fn()
+    const { repository, saves, failNext } = inMemoryRepository(saved)
+    const store = await loadedStore(repository, { onNotice })
+
+    store.getState().setTitle('已保存的標題')
+    await store.getState().waitForSaves()
+    failNext(new Error('網路錯誤'))
+    store.getState().moveTask('a', 'next')
+    store.getState().moveTask('b', 'next')
+    store.getState().setSubtitle('排隊中的副標')
+    await store.getState().waitForSaves()
+
+    expect(saves).toHaveLength(1)
+    expect(store.getState().board).toEqual({ ...saves[0], version: 2 })
+    expect(store.getState().board!.title).toBe('已保存的標題')
+    expect(store.getState().board!.order).toEqual(saved.order)
+    expect(onNotice).toHaveBeenCalledOnce()
+    vi.mocked(console.error).mockRestore()
+  })
+
+  it('還原後的新操作會以最後保存的版本號儲存', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const { repository, saves, failNext } = inMemoryRepository(saved)
+    const store = await loadedStore(repository)
+    failNext(new Error('網路錯誤'))
+
+    store.getState().moveTask('a', 'next')
+    await store.getState().waitForSaves()
+    store.getState().moveTask('c', 'next')
+    await store.getState().waitForSaves()
+
+    expect(saves).toHaveLength(1)
+    expect(saves[0]).toMatchObject({ version: 1, order: { todo: ['a'], review: [], done: ['d', 'c'] } })
+    vi.mocked(console.error).mockRestore()
+  })
+
+  it('版本衝突時顯示「看板已被其他人更新」，放棄本地的修改並改用最新的看板', async () => {
+    const onNotice = vi.fn()
+    const { repository, saves, updateByOthers } = inMemoryRepository(saved)
+    const store = await loadedStore(repository, { onNotice })
+    const latest = updateByOthers({ title: '其他人改的標題' })
+
+    store.getState().moveTask('a', 'next')
+    store.getState().setSubtitle('排隊中的副標')
+    await store.getState().waitForSaves()
+
+    expect(store.getState().board).toEqual(latest)
+    expect(saves).toEqual([])
+    expect(onNotice).toHaveBeenCalledExactlyOnceWith('看板已被其他人更新')
+  })
+
+  it('版本衝突後的新操作建立在最新的看板上，可以正常儲存', async () => {
+    const { repository, saves, updateByOthers } = inMemoryRepository(saved)
+    const store = await loadedStore(repository)
+    updateByOthers({ title: '其他人改的標題' })
+
+    store.getState().moveTask('a', 'next')
+    await store.getState().waitForSaves()
+    store.getState().setSubtitle('我的副標')
+    await store.getState().waitForSaves()
+
+    expect(saves).toEqual([
+      expect.objectContaining({ title: '其他人改的標題', subtitle: '我的副標', version: 2, order: saved.order }),
+    ])
+  })
+
+  it('儲存時未授權：通知外層導向登入頁，畫面還原，不顯示儲存失敗', async () => {
+    const onNotice = vi.fn()
+    const onUnauthorized = vi.fn()
+    const { repository, saves, failNext } = inMemoryRepository(saved)
+    const store = await loadedStore(repository, { onNotice, onUnauthorized })
+    failNext(new UnauthorizedError())
+
+    store.getState().moveTask('a', 'next')
+    store.getState().setTitle('排隊中的標題')
+    await store.getState().waitForSaves()
+
+    expect(onUnauthorized).toHaveBeenCalledOnce()
+    expect(onNotice).not.toHaveBeenCalled()
+    expect(store.getState().board).toEqual(saved)
+    expect(saves).toEqual([])
   })
 })
 

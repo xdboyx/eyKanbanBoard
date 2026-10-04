@@ -56,6 +56,16 @@ describe('登入 store', () => {
     expect(store.getState().authenticated).toBe(false)
   })
 
+  it('session 失效後標記為未登入，之後的檢查不再沿用已登入的結果', async () => {
+    const store = createAuthStore(inMemoryAuthService(true).service)
+    await store.getState().check()
+
+    store.getState().expire()
+
+    expect(store.getState().authenticated).toBe(false)
+    await expect(store.getState().check()).resolves.toBe(false)
+  })
+
   it('登出後回到未登入，驗證服務的 session 也結束', async () => {
     const auth = inMemoryAuthService(true)
     const store = createAuthStore(auth.service)

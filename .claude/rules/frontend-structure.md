@@ -56,7 +56,7 @@ src/
 ├── main.tsx
 ├── router.tsx
 ├── components/
-│   ├── Button.tsx、ConfirmDialog.tsx、Drawer.tsx、icons.tsx、ThemeToggle.tsx
+│   ├── Button.tsx、ConfirmDialog.tsx、Drawer.tsx、icons.tsx、InlineTextEdit.tsx、ThemeToggle.tsx
 │   ├── board/        StatusColumn.tsx、TaskCard.tsx
 │   ├── layout/       AppHeader.tsx、NoticeBar.tsx
 │   └── task/         TaskDrawer.tsx

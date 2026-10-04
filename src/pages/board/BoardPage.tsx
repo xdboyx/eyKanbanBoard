@@ -3,6 +3,7 @@ import { flushSync } from 'react-dom'
 import { buttonClassName } from '../../components/Button'
 import { StatusColumn } from '../../components/board/StatusColumn'
 import { AddIcon } from '../../components/icons'
+import { InlineTextEdit } from '../../components/InlineTextEdit'
 import { ThemeToggle } from '../../components/ThemeToggle'
 import { useBoardView } from '../../hooks/useBoardView'
 import { useTaskDrag } from '../../hooks/useTaskDrag'
@@ -33,12 +34,21 @@ export function BoardPage({ store, themeStore }: { store: BoardStore; themeStore
   return (
     <>
       <section className="flex flex-wrap items-end justify-between gap-6 bg-band px-17 pt-10 pb-8 text-text max-md:px-6">
-        <div className="flex flex-col gap-2">
-          <h1 className="m-0 text-display">{view.title}</h1>
+        <div className="flex max-w-full flex-col gap-2">
+          <h1 className="m-0 text-display">
+            <InlineTextEdit value={view.title} label="看板標題" onSave={(title) => store.getState().setTitle(title)} />
+          </h1>
           <ul className="meta-list text-body-loose text-muted">
             <li>{localDate(view.updatedAt)} 更新</li>
             <li>{view.totalTasks} 項任務</li>
-            {view.subtitle && <li>{view.subtitle}</li>}
+            <li>
+              <InlineTextEdit
+                value={view.subtitle}
+                label="看板副標"
+                placeholder="新增副標"
+                onSave={(subtitle) => store.getState().setSubtitle(subtitle)}
+              />
+            </li>
           </ul>
         </div>
         <div className="flex flex-wrap items-center gap-4">

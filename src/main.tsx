@@ -2,18 +2,34 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { RouterProvider } from '@tanstack/react-router'
 import { createAppRouter } from './router'
+import type { AuthService } from './services/authService'
+import { createLocalAuthService } from './services/localAuthService'
 import { createLocalStorageRepository, resetSampleBoard } from './services/localStorageBoardRepository'
 import { createLocalStorageThemePreference } from './services/themePreference'
+import { createAuthStore } from './stores/authStore'
 import { createBoardStore } from './stores/boardStore'
 import { createNoticeStore } from './stores/noticeStore'
 import { createThemeStore } from './stores/themeStore'
 import type { Theme } from './types/theme'
 import './styles/index.css'
 
-const store = createBoardStore(createLocalStorageRepository())
 const themeStore = createThemeStore(createLocalStorageThemePreference())
-const noticeStore = createNoticeStore()
-const router = createAppRouter(store, themeStore, noticeStore)
+
+// 本地模擬登入只在開發模式使用；正式建置時這個分支連同 .env.local 的帳密一起被移除（ADR-0001）。
+// 正式環境的 Worker 驗證完成前（#11），正式建置一律視為未登入
+const authService: AuthService = import.meta.env.DEV
+  ? createLocalAuthService({
+      username: import.meta.env.VITE_APP_USERNAME,
+      password: import.meta.env.VITE_APP_PASSWORD,
+    })
+  : { checkSession: async () => false, login: async () => false, logout: async () => {} }
+
+const router = createAppRouter({
+  authStore: createAuthStore(authService),
+  store: createBoardStore(createLocalStorageRepository()),
+  themeStore,
+  noticeStore: createNoticeStore(),
+})
 
 // 主題寫在 <html data-theme> 上，所有頁面（包含登入頁）都依此換色
 const applyTheme = (theme: Theme) => {

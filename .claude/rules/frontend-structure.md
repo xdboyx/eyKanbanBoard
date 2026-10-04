@@ -13,7 +13,7 @@
 | `stores/` | zustand store。需要跨頁面（全域）或跨多個元件（某個區塊）共用的狀態都放這裡 | 只有單一元件用到的狀態（用 `useState`） |
 | `pages/` | 每條路由對應的頁面元件，依網址第一段分資料夾：`/` → `pages/board/`、`/tasks/*` → `pages/tasks/`、`/login` → `pages/login/` | 路由定義本身（集中在 `src/router.tsx`，見 ADR-0004）、可在別頁重用的元件（放 `components/`） |
 | `types/` | 跨資料夾共用的領域型別與常數，例如 `Task`、`Status`、`BoardView` | 只有單一檔案用到的型別（跟著那個檔案放） |
-| `services/` | 資料存取：`BoardRepository` 介面、localStorage 實作、之後的 Worker API 呼叫、本地範例資料 | 畫面狀態（放 `stores/`） |
+| `services/` | 資料存取與驗證：`BoardRepository`、`AuthService` 介面、localStorage 與本地模擬登入的實作、之後的 Worker API 呼叫、本地範例資料 | 畫面狀態（放 `stores/`） |
 
 `src/` 根目錄只放進入點 `main.tsx` 與路由定義 `router.tsx`。測試不放在 `src/`，見下方「命名」。
 
@@ -78,15 +78,16 @@ src/
 ├── hooks/            useBoardSearch.ts、useBoardView.ts、useLeaveGuard.ts、useModalDialog.ts、useNotice.ts、useTask.ts、useTaskDrag.ts、useTheme.ts
 ├── pages/
 │   ├── board/        BoardPage.tsx
+│   ├── login/        LoginPage.tsx
 │   └── tasks/        EditTaskPage.tsx、NewTaskPage.tsx
-├── services/         boardRepository.ts、localStorageBoardRepository.ts、sampleBoard.ts、themePreference.ts
-├── stores/           boardStore.ts、noticeStore.ts、themeStore.ts
+├── services/         authService.ts、boardRepository.ts、localAuthService.ts、localStorageBoardRepository.ts、sampleBoard.ts、themePreference.ts
+├── stores/           authStore.ts、boardStore.ts、noticeStore.ts、themeStore.ts
 ├── styles/           index.css、theme.css
 ├── types/            board.ts、theme.ts
-└── utils/            board.ts、boardView.ts、date.ts、taskDraft.ts
+└── utils/            board.ts、boardView.ts、date.ts、redirect.ts、taskDraft.ts
 
 tests/                鏡像 src/ 的路徑
 ├── services/         localStorageBoardRepository.test.ts、themePreference.test.ts
-├── stores/           boardStore.test.ts、noticeStore.test.ts、themeStore.test.ts
-└── utils/            boardView.test.ts
+├── stores/           authStore.test.ts、boardStore.test.ts、noticeStore.test.ts、themeStore.test.ts
+└── utils/            boardView.test.ts、redirect.test.ts
 ```

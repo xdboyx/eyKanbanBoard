@@ -5,18 +5,23 @@ import {
   createRouter,
   redirect,
   retainSearchParams,
+  useNavigate,
 } from '@tanstack/react-router'
 import { AppHeader } from './components/layout/AppHeader'
 import { NoticeBar } from './components/layout/NoticeBar'
 import { useNotice } from './hooks/useNotice'
 import { BoardPage } from './pages/board/BoardPage'
+import { LoginPage } from './pages/login/LoginPage'
 import { EditTaskPage } from './pages/tasks/EditTaskPage'
 import { NewTaskPage } from './pages/tasks/NewTaskPage'
+import type { AuthStore } from './stores/authStore'
 import type { BoardStore } from './stores/boardStore'
 import type { NoticeStore } from './stores/noticeStore'
 import type { ThemeStore } from './stores/themeStore'
+import { loginRedirectTarget } from './utils/redirect'
 
 interface RouterContext {
+  authStore: AuthStore
   store: BoardStore
   themeStore: ThemeStore
   noticeStore: NoticeStore
@@ -24,14 +29,65 @@ interface RouterContext {
 
 const rootRoute = createRootRouteWithContext<RouterContext>()({
   component: function Root() {
-    const { noticeStore } = rootRoute.useRouteContext()
-    const { message, dismiss } = useNotice(noticeStore)
     return (
       <div className="flex min-h-screen flex-col bg-page text-text">
-        <AppHeader />
-        <NoticeBar message={message} onDismiss={dismiss} />
         <Outlet />
       </div>
+    )
+  },
+})
+
+/** 登入頁的查詢參數：redirect 是登入後要回到的網址 */
+interface LoginSearch {
+  redirect?: string
+}
+
+const loginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'login',
+  validateSearch: (search: Record<string, unknown>): LoginSearch =>
+    typeof search.redirect === 'string' && search.redirect ? { redirect: search.redirect } : {},
+  // 已登入時不顯示登入頁，直接前往要去的網址
+  beforeLoad: async ({ context, search }) => {
+    if (await context.authStore.getState().check()) {
+      throw redirect({ href: loginRedirectTarget(search.redirect), replace: true })
+    }
+  },
+  component: function LoginRoute() {
+    const { authStore } = loginRoute.useRouteContext()
+    const { redirect } = loginRoute.useSearch()
+    return <LoginPage authStore={authStore} redirect={redirect} />
+  },
+})
+
+/** 需要登入的頁面：未登入時導向登入頁，並把原本的網址帶在 redirect，登入後回到這裡 */
+const authenticatedRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  id: 'authenticated',
+  beforeLoad: async ({ context, location }) => {
+    if (await context.authStore.getState().check()) return
+    throw redirect({
+      to: '/login',
+      search: location.href === '/' ? {} : { redirect: location.href },
+      replace: true,
+    })
+  },
+  component: function Authenticated() {
+    const { authStore, noticeStore } = authenticatedRoute.useRouteContext()
+    const { message, dismiss } = useNotice(noticeStore)
+    const navigate = useNavigate()
+
+    async function logout() {
+      await authStore.getState().logout()
+      await navigate({ to: '/login' })
+    }
+
+    return (
+      <>
+        <AppHeader onLogout={logout} />
+        <NoticeBar message={message} onDismiss={dismiss} />
+        <Outlet />
+      </>
     )
   },
 })
@@ -43,7 +99,7 @@ interface BoardSearch {
 
 /** 看板，以及以抽屜疊在看板上的任務子路由 */
 const boardRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => authenticatedRoute,
   id: 'board',
   validateSearch: (search: Record<string, unknown>): BoardSearch =>
     typeof search.q === 'string' && search.q ? { q: search.q } : {},
@@ -96,7 +152,10 @@ const taskRoute = createRoute({
   },
 })
 
-const routeTree = rootRoute.addChildren([boardRoute.addChildren([boardIndexRoute, newTaskRoute, taskRoute])])
+const routeTree = rootRoute.addChildren([
+  loginRoute,
+  authenticatedRoute.addChildren([boardRoute.addChildren([boardIndexRoute, newTaskRoute, taskRoute])]),
+])
 
 /**
  * 查詢參數一律當成純文字。預設會把值當 JSON 解析，搜尋「123」「true」「null」會被轉型，
@@ -115,8 +174,8 @@ function stringifySearch(search: Record<string, unknown>): string {
   return searchStr ? `?${searchStr}` : ''
 }
 
-export function createAppRouter(store: BoardStore, themeStore: ThemeStore, noticeStore: NoticeStore) {
-  return createRouter({ routeTree, context: { store, themeStore, noticeStore }, parseSearch, stringifySearch })
+export function createAppRouter(context: RouterContext) {
+  return createRouter({ routeTree, context, parseSearch, stringifySearch })
 }
 
 declare module '@tanstack/react-router' {

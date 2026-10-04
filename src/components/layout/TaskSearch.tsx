@@ -60,10 +60,11 @@ export function TaskSearch({ query, onChange }: { query: string; onChange: (quer
           refocus.current = true
           setOpen(true)
         }}
-        className="focus-ring state-layer inline-flex cursor-pointer items-center gap-2 rounded-sm border border-ink-800 bg-white px-4 py-[9px] text-small text-ink-800"
+        className="focus-ring state-layer inline-flex flex-none cursor-pointer items-center gap-2 rounded-sm border border-ink-800 bg-white px-4 py-[9px] text-small whitespace-nowrap text-ink-800"
       >
         <SearchIcon />
-        搜尋任務
+        {/* 手機上頁首放不下，只顯示圖示；文字留給螢幕閱讀器 */}
+        <span className="max-sm:sr-only">搜尋任務</span>
       </button>
     )
   }
@@ -71,7 +72,7 @@ export function TaskSearch({ query, onChange }: { query: string; onChange: (quer
   return (
     <div
       role="search"
-      className="flex w-80 max-w-full items-center gap-2 rounded-sm border border-gray-600 bg-ink-900 pl-3 text-white focus-within:border-white"
+      className="flex w-80 max-w-full min-w-0 items-center gap-2 rounded-sm border border-gray-600 bg-ink-900 pl-3 text-white focus-within:border-white"
     >
       <SearchIcon />
       <input

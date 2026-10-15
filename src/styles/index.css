@@ -111,6 +111,12 @@
   a:hover {
     color: var(--color-gray-300);
   }
+  /* 下拉清單的選項：select 本身是透明底，Windows 的清單會繼承白字卻畫在白底上，
+     所以選項要自己指定底色與文字色（macOS 用系統繪製的清單，不受影響） */
+  option {
+    background-color: var(--color-card);
+    color: var(--color-text);
+  }
   /* 抽屜或確認框開啟時，背後的頁面不跟著捲動 */
   html:has(dialog[open]) {
     overflow: hidden;
